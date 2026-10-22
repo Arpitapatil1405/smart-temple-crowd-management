@@ -1,3 +1,4 @@
+
 "use strict";
 
 const SUPABASE_URL = "https://vdcxvxtgkzwsknxmevwt.supabase.co";
@@ -7,6 +8,7 @@ const $ = id => document.getElementById(id);
 
 let temples = [], currentTab = "active", activeUser = null, activeProfile = null;
 let toastTimer, selectedZone = "A", selectedSlot = "", slotRequest = 0;
+let currentPassToken = "";
 
 const demoTemples = [
   ["Shree Siddhivinayak Temple","Mumbai"],
@@ -203,15 +205,12 @@ function getTempleCrowdInfo(temple) {
     festivals=["Annual Temple Festival","Diwali"];
   }
 
-  // Stable demo crowd level with weekday-based variation.
   const seed=[...name].reduce((sum,ch)=>sum+ch.charCodeAt(0),0);
   const levels=["Low","Moderate","High"];
   let level=levels[(seed+day)%levels.length];
 
   if(busyDays.includes(day)) level="High";
 
-  // A repeatable sample festival badge for demonstration.
-  // Festival dates are illustrative, not a verified calendar.
   const dayNumber=Math.floor(Date.now()/86400000);
   const showFestival=(seed+dayNumber)%4===0;
   const festivalName=showFestival
@@ -238,8 +237,6 @@ async function init() {
 
     activeUser = data.session.user;
 
-    // Use Auth details immediately so the dashboard can load
-    // even if the profiles lookup returns no row.
     const metadata = activeUser.user_metadata || {};
     const fallbackName =
       metadata.full_name ||
@@ -264,7 +261,6 @@ async function init() {
       new Date(Date.now() + 86400000)
     );
 
-    // Try to load the database profile, but do not block the dashboard
     try {
       const { data: profile, error: profileError } = await sb
         .from("profiles")
@@ -300,6 +296,7 @@ async function init() {
     );
   }
 }
+
 /* --------------------------------------------------
    TEMPLE LIST AND PLACARDS
 -------------------------------------------------- */
@@ -357,7 +354,6 @@ function renderTemples() {
     const info=getTempleCrowdInfo(t);
     const c=txt("article","temple-card","");
 
-    // Heading row: temple name and optional festival badge.
     const heading=txt("div","temple-card-heading","");
     heading.appendChild(txt("h3","",t.name));
 
@@ -370,7 +366,6 @@ function renderTemples() {
     c.appendChild(heading);
     c.appendChild(txt("p","temple-city",`⌖ ${t.city||"City not listed"}`));
 
-    // Crowd density.
     const crowd=txt(
       "div",
       `crowd-density crowd-${info.level.toLowerCase()}`,
@@ -571,29 +566,43 @@ async function createBooking(event) {
   }
 }
 
-function renderPass(b) {
-  $("bookingForm").hidden=true;
-  $("passArea").hidden=false;
-  $("passTemple").textContent=b.temple_name||"";
-  $("passCity").textContent=b.temple_city||"City not listed";
-  $("passName").textContent=b.devotee_name||$("devoteeName").textContent;
-  $("passCount").textContent=b.devotee_count??"";
-  $("passDate").textContent=b.darshan_date||"";
-  $("passTime").textContent=b.time_slot||"";
-  $("passToken").textContent=b.booking_token||"";
+function getHostedPassUrl(bookingToken, autoPrint=false) {
+  const passUrl = new URL("./darshan-pass.html", window.location.href);
+  passUrl.search = "";
+  passUrl.searchParams.set("token", bookingToken);
 
-  const qr=$("passQR");
+  if(autoPrint) {
+    passUrl.searchParams.set("autoprint", "1");
+  }
+
+  return passUrl.href;
+}
+
+function renderPass(b) {
+  currentPassToken = b.booking_token || "";
+
+  $("bookingForm").hidden = true;
+  $("passArea").hidden = false;
+  $("passTemple").textContent = b.temple_name || "";
+  $("passCity").textContent = b.temple_city || "City not listed";
+  $("passName").textContent = b.devotee_name || $("devoteeName").textContent;
+  $("passCount").textContent = b.devotee_count ?? "";
+  $("passDate").textContent = b.darshan_date || "";
+  $("passTime").textContent = b.time_slot || "";
+  $("passToken").textContent = currentPassToken;
+
+  const qr = $("passQR");
   qr.replaceChildren();
 
-  if(window.QRCode) {
-    new QRCode(qr,{
-      text:b.booking_token||"",
-      width:160,
-      height:160,
-      correctLevel:QRCode.CorrectLevel.M
+  if (window.QRCode && currentPassToken) {
+    new QRCode(qr, {
+      text: getHostedPassUrl(currentPassToken),
+      width: 180,
+      height: 180,
+      correctLevel: QRCode.CorrectLevel.M
     });
   } else {
-    qr.appendChild(txt("p","notice","QR library unavailable. Check internet connection."));
+    qr.appendChild(txt("p", "notice", "Unable to generate QR code."));
   }
 
   qr.appendChild(txt(
@@ -683,6 +692,20 @@ function renderBookings() {
       openModal("bookingModal");
     });
     c.appendChild(view);
+
+    const openHostedPass=txt("button","small-action","Open Full Pass");
+    openHostedPass.type="button";
+    openHostedPass.addEventListener("click",()=>{
+      const bookingToken=b.booking_ref;
+
+      if(!bookingToken) {
+        showToast("This booking has no reference token.");
+        return;
+      }
+
+      window.open(getHostedPassUrl(bookingToken), "_blank", "noopener");
+    });
+    c.appendChild(openHostedPass);
 
     if(st(b.status)==="confirmed"&&b.booking_date>=today) {
       const cancel=txt("button","small-action","Cancel Booking");
@@ -1017,7 +1040,6 @@ function openLost() {
 
   addField(f,"VISUAL DESCRIPTION","lostDescription","textarea","Describe clothing, colour, identifying marks or item details");
   addField(f,"CONTACT PERSON / GUARDIAN","lostContact","text","Contact person's name");
-
   addField(f,"CONTACT MOBILE (OPTIONAL)","lostMobile","tel","10-digit mobile number");
 
   const photo=addField(f,"REFERENCE PHOTO (OPTIONAL)","lostPhoto","file","");
@@ -1071,7 +1093,17 @@ function bindEvents() {
   $("bookingTemple").addEventListener("change",loadAvailableSlots);
   $("bookingDate").addEventListener("change",loadAvailableSlots);
 
-  $("printPass").addEventListener("click",()=>window.print());
+  // Print / Save opens the full hosted pass page, not the dashboard modal.
+  $("printPass").addEventListener("click",()=>{
+    if(!currentPassToken) {
+      showToast("Open a booking's E-Pass first.");
+      return;
+    }
+
+    const passUrl=getHostedPassUrl(currentPassToken,true);
+    window.open(passUrl,"_blank","noopener");
+  });
+
   $("newBooking").addEventListener("click",()=>closeModal("bookingModal"));
 
   document.querySelectorAll("[data-close]").forEach(b=>
