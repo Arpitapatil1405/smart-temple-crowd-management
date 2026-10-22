@@ -1,0 +1,104 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Temple | Devotee Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-icon">ॐ</span><span>Smart Temple</span></a>
+    <div class="top-actions"><span>DEVOTEE PORTAL</span><button id="logoutBtn" class="logout">Logout</button></div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="profile">
+        <div class="profile-row"><div class="avatar" id="avatar">D</div><div class="profile-info"><h2 id="devoteeName">Devotee</h2><p id="devoteeEmail">Loading...</p></div></div>
+        <div class="stats">
+          <div><strong id="activeCount">0</strong><small>ACTIVE DARSHANS</small></div>
+          <div><strong id="pastCount">0</strong><small>PAST HISTORY</small></div>
+        </div>
+      </section>
+
+      <section class="side-card" id="bookingsSection">
+        <div class="section-title"><span>▣</span><h3>Darshan Bookings</h3><small id="bookingTotal">0 Total</small></div>
+        <div class="tabs"><button class="tab active" data-tab="active">Active / Upcoming</button><button class="tab" data-tab="past">Past History</button></div>
+        <div id="bookingsList" class="booking-list"><p class="empty">Loading bookings...</p></div>
+      </section>
+
+      <section class="side-card">
+        <div class="section-title"><span>▦</span><h3>Devotee Services</h3></div>
+        <div class="language-box"><strong>LANGUAGE</strong><div class="language-switch"><button class="lang active" data-lang="en">English</button><button class="lang" data-lang="hi">हिन्दी</button></div></div>
+        <div class="services">
+          <button class="service sos" data-service="sos"><span>⚠</span><strong>EMERGENCY SOS</strong></button>
+          <button class="service donation" data-service="donation"><span>♥</span><strong>DONATION</strong></button>
+          <button class="service parking" data-service="parking"><span>♧</span><strong>PARKING MGMT</strong></button>
+          <button class="service lost" data-service="lost"><span>⌕</span><strong>LOST AND FOUND</strong></button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="main-panel" id="templesSection">
+      <div class="heading-row"><div><span class="eyebrow">YOUR SPIRITUAL JOURNEY</span><h1>Select Temple</h1><p>Choose your destination for Darshan.</p></div><span id="templeCount" class="muted">Loading temples...</span></div>
+      <div class="search-row"><label class="search"><span>⌕</span><input id="templeSearch" type="search" placeholder="Search temple by name or city..."></label><select id="cityFilter"><option value="all">All Cities</option></select></div>
+      <div id="templeGrid" class="temple-grid"><p class="empty">Loading temples...</p></div>
+      <div class="footer-note"><span>🙏</span><p><strong>Your Darshan, made easier.</strong><br>Plan ahead and make every visit more peaceful.</p></div>
+    </section>
+  </main>
+
+  <!-- DARSHAN BOOKING AND E-PASS -->
+  <div class="overlay" id="bookingModal" aria-hidden="true">
+    <section class="modal large-modal" role="dialog" aria-modal="true" aria-labelledby="bookingHeading">
+      <button class="close" data-close="bookingModal" aria-label="Close">×</button>
+      <div class="modal-heading"><span class="modal-icon">▣</span><div><h2 id="bookingHeading">Book Your Darshan</h2><p>Choose a temple, date and preferred time slot.</p></div></div>
+      <form id="bookingForm" class="form-grid">
+        <label class="full">SELECT TEMPLE<select id="bookingTemple" required></select></label>
+        <label>DARSHAN DATE<input id="bookingDate" type="date" required></label>
+        <label>TIME SLOT<select id="bookingTime" required><option>07:00 AM - 08:00 AM</option><option>08:00 AM - 09:00 AM</option><option>09:00 AM - 10:00 AM</option><option>10:00 AM - 11:00 AM</option><option>04:00 PM - 05:00 PM</option><option>05:00 PM - 06:00 PM</option></select></label>
+        <label>DEVOTEE NAME<input id="bookingName" maxlength="100" required></label>
+        <label>NUMBER OF DEVOTEES<select id="bookingCount"><option value="1">1 Devotee</option><option value="2">2 Devotees</option><option value="3">3 Devotees</option><option value="4">4 Devotees</option><option value="5">5 Devotees</option></select></label>
+        <label class="full">CONTACT MOBILE (OPTIONAL)<input id="bookingMobile" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number"></label>
+        <p class="notice full">Project booking only. Actual temple availability and entry permission must be confirmed with the temple.</p>
+        <button id="confirmBooking" class="primary full" type="submit">Confirm Darshan Booking →</button>
+        <p id="bookingMessage" class="message full" role="status"></p>
+      </form>
+      <div id="passArea" hidden>
+        <div id="passCard" class="pass-card">
+          <div class="pass-head"><span class="om">ॐ</span><div><strong>SMART TEMPLE</strong><small>DEVOTEE E-DARSHAN PASS</small></div><span class="pass-badge">CONFIRMED</span></div>
+          <div class="pass-body"><h2 id="passTemple"></h2><p id="passCity" class="muted"></p>
+            <div class="pass-grid">
+              <div><small>DEVOTEE NAME</small><strong id="passName"></strong></div>
+              <div><small>NUMBER OF DEVOTEES</small><strong id="passCount"></strong></div>
+              <div><small>DARSHAN DATE</small><strong id="passDate"></strong></div>
+              <div><small>TIME SLOT</small><strong id="passTime"></strong></div>
+              <div class="full"><small>BOOKING TOKEN</small><strong id="passToken"></strong></div>
+            </div>
+            <div id="passQR" class="qr"></div>
+            <p class="notice">This is a project-generated pass, not an official temple entry permit.</p>
+          </div>
+        </div>
+        <button id="printPass" class="primary full" type="button">Print E-Darshan Pass</button>
+        <button id="newBooking" class="secondary full" type="button">Back to Dashboard</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- SERVICE WINDOWS -->
+  <div class="overlay" id="serviceModal" aria-hidden="true">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="serviceTitle">
+      <button class="close" data-close="serviceModal" aria-label="Close">×</button>
+      <div class="modal-heading"><span class="modal-icon" id="serviceIcon">♡</span><div><h2 id="serviceTitle">Devotee Service</h2><p id="serviceSubtitle"></p></div></div>
+      <div id="serviceContent"></div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
