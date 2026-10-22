@@ -1,0 +1,161 @@
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #fffcf6;
+  color: #29251f;
+  font-family: Arial, sans-serif;
+}
+
+header {
+  padding: 22px 7%;
+  background: white;
+  border-bottom: 1px solid #eee5d9;
+}
+
+header a {
+  color: #29251f;
+  text-decoration: none;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+main {
+  width: min(1000px, 90%);
+  min-height: 85vh;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 55px;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.welcome > p:first-child {
+  color: #d97736;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.welcome h1 {
+  font-size: clamp(36px, 5vw, 54px);
+  line-height: 1.15;
+}
+
+.welcome h1 span {
+  color: #ff6900;
+}
+
+.welcome p {
+  line-height: 1.7;
+  color: #81796f;
+}
+
+.login-card {
+  padding: 30px;
+  background: white;
+  border: 1px solid #eee5d9;
+  border-radius: 18px;
+  box-shadow: 0 15px 45px #29251f12;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 25px;
+  padding: 5px;
+  background: #f8f3ec;
+  border-radius: 10px;
+}
+
+.tabs button {
+  width: 50%;
+  padding: 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.tabs button.active {
+  background: white;
+  color: #d97736;
+  font-weight: bold;
+}
+
+h2 {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin: 16px 0 7px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+input, select {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #e8e0d5;
+  border-radius: 8px;
+  background: #fffefa;
+  font-size: 14px;
+}
+
+input:focus, select:focus {
+  outline: 2px solid #d9773640;
+  border-color: #d97736;
+}
+
+.submit {
+  width: 100%;
+  padding: 14px;
+  margin-top: 22px;
+  border: 0;
+  border-radius: 8px;
+  background: #ff6900;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.submit:hover {
+  background: #d97736;
+}
+
+.login-card p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.text-btn {
+  border: 0;
+  background: none;
+  color: #d97736;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  main {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .welcome h1 {
+    font-size: 38px;
+  }
+
+  .login-card {
+    padding: 22px;
+  }
+}
