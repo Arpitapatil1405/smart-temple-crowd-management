@@ -5,40 +5,48 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ff6500">
+  <meta name="description" content="Smart Temple E-Darshan booking pass">
   <title>Smart Temple | E-Darshan Pass</title>
-  <link rel="stylesheet" href="darshan-pass.css">
+  <link rel="stylesheet" href="./darshan-pass.css">
 </head>
 <body>
   <nav class="pass-nav">
-    <a href="devotee-dashboard.html" class="back-link">← Back to Smart Temple</a>
-    <button id="printPass" class="print-button">▤ Print / Save Pass</button>
+    <a href="./devotee-dashboard.html" class="back-link">
+      ← Back to Smart Temple
+    </a>
+    <button id="printPass" class="print-button" type="button">
+      ▤ Print / Save Pass
+    </button>
   </nav>
 
-  <div class="notice-bar">
-    <div class="notice-icon">▦</div>
+  <div class="notice-bar" id="noticeBar">
+    <div class="notice-icon" aria-hidden="true">▦</div>
     <div class="notice-copy">
       <strong>SMART TEMPLE E-DARSHAN PASS</strong>
-      <span>Present this project-generated pass for demonstration.</span>
+      <span>Project-generated booking pass. Verify entry arrangements with the temple.</span>
     </div>
     <span class="valid-pill" id="statusPill">LOADING PASS</span>
   </div>
 
-  <main id="passContainer" class="pass-ticket">
+  <main id="passContainer" class="pass-ticket" hidden>
     <header class="ticket-header">
-      <div class="temple-symbol">ॐ</div>
+      <div class="temple-symbol" aria-hidden="true">ॐ</div>
+
       <div class="temple-brand">
         <span class="kicker">✦ SMART TEMPLE · DEVOTEE BOOKING</span>
         <h1 id="templeName">Loading temple...</h1>
         <p id="templeCity">Temple location</p>
       </div>
+
       <div class="token-box">
-        <small>TOKEN NUMBER</small>
+        <small>ONLINE BOOKING TOKEN</small>
         <strong id="tokenNumber">—</strong>
-        <span>Project booking</span>
+        <span>Booking reference</span>
       </div>
+
       <div class="ticket-meta">
-        <span>♧ Booking reference verified by Smart Temple</span>
-        <span id="createdStatus">● PASS DETAILS</span>
+        <span>Smart Temple booking record</span>
+        <span id="createdStatus">● VERIFYING BOOKING</span>
       </div>
     </header>
 
@@ -48,8 +56,9 @@
           <div>
             <small class="field-label">DEVOTEE NAME</small>
             <h2 id="devoteeName">—</h2>
-            <span class="people-pill" id="devoteeCount">1 Devotee</span>
+            <span class="people-pill" id="devoteeCount">—</span>
           </div>
+
           <div class="status-box">
             <small class="field-label">BOOKING STATUS</small>
             <strong id="bookingStatus">—</strong>
@@ -62,34 +71,41 @@
             <strong id="darshanDate">—</strong>
             <span id="dateIso"></span>
           </article>
+
           <article class="info-card orange-card">
             <small>◷ ALLOTTED TIME SLOT</small>
             <strong id="darshanTime">—</strong>
             <span>Selected booking time</span>
           </article>
+
           <article class="info-card blue-card">
             <small>♧ REPORTING TIME</small>
             <strong id="reportingTime">—</strong>
-            <span>Suggested: arrive 15 minutes early</span>
+            <span>Suggested arrival time</span>
           </article>
+
           <article class="info-card green-card">
             <small>♧ ENTRY GATE</small>
             <strong id="entryGate">Confirm with temple staff</strong>
-            <span id="gateLocation">Entry gate not assigned</span>
+            <span id="gateLocation">No gate assignment stored</span>
           </article>
         </div>
 
         <div class="admission-note">
           <strong>✓ PROJECT BOOKING PASS</strong>
-          <p>This pass confirms that a booking record exists in Smart Temple. It does not guarantee temple entry. Verify the slot, gate, and entry rules with the temple.</p>
+          <p>
+            This pass displays a booking record retrieved from Smart Temple.
+            It is not an official temple permit. Verify your booking, entry
+            gate and entry requirements with authorised temple staff.
+          </p>
         </div>
       </div>
 
       <aside class="qr-panel">
-        <span class="qr-label">BOOKING QR CODE</span>
-        <div id="passQr" class="qr-frame"></div>
+        <span class="qr-label">SCAN TO OPEN E-DARSHAN PASS</span>
+        <div id="passQr" class="qr-frame" aria-label="Booking pass QR code"></div>
         <strong id="qrToken">—</strong>
-        <p>Scan to open this pass on a phone.</p>
+        <p>Scan with a phone camera to open this hosted pass.</p>
         <div class="barcode" aria-hidden="true"></div>
         <small>SMART TEMPLE · BOOKING REFERENCE</small>
       </aside>
@@ -98,10 +114,22 @@
     <section class="guidelines">
       <h3>ⓘ IMPORTANT DARSHAN GUIDELINES</h3>
       <div class="guideline-grid">
-        <article><strong>1. Identification</strong><p>Carry any identification required by the temple.</p></article>
-        <article><strong>2. Reporting Time</strong><p>Plan to arrive early. Follow the temple's actual entry instructions.</p></article>
-        <article><strong>3. Temple Rules</strong><p>Observe local rules regarding footwear, bags, and prohibited items.</p></article>
-        <article><strong>4. Entry Gate</strong><p>Confirm the correct gate with authorised temple staff before visiting.</p></article>
+        <article>
+          <strong>1. Identification</strong>
+          <p>Carry any identification required by the temple.</p>
+        </article>
+        <article>
+          <strong>2. Reporting Time</strong>
+          <p>Arrive early and follow the temple's actual entry instructions.</p>
+        </article>
+        <article>
+          <strong>3. Temple Rules</strong>
+          <p>Observe local rules concerning footwear, bags and prohibited items.</p>
+        </article>
+        <article>
+          <strong>4. Entry Gate</strong>
+          <p>Confirm the correct gate with authorised temple staff.</p>
+        </article>
       </div>
     </section>
 
@@ -113,12 +141,19 @@
 
   <section id="errorState" class="error-state" hidden>
     <h2>Pass unavailable</h2>
-    <p id="errorMessage">We could not find a booking for this QR code.</p>
-    <a href="login.html">Return to login</a>
+    <p id="errorMessage">
+      We could not find a booking for this QR code.
+    </p>
+    <button id="retryPass" class="print-button" type="button">
+      Try Again
+    </button>
+    <p>
+      <a href="./devotee-dashboard.html">Return to dashboard</a>
+    </p>
   </section>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="darshan-pass.js"></script>
+  <script src="./darshan-pass.js"></script>
 </body>
 </html>

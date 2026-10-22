@@ -1,3 +1,4 @@
+
 "use strict";
 
 const SUPABASE_URL = "https://vdcxvxtgkzwsknxmevwt.supabase.co";
@@ -565,38 +566,43 @@ async function createBooking(event) {
   }
 }
 
-/* --------------------------------------------------
-   E-PASS DISPLAY AND QR GENERATION
--------------------------------------------------- */
+function getHostedPassUrl(bookingToken, autoPrint=false) {
+  const passUrl = new URL("./darshan-pass.html", window.location.href);
+  passUrl.search = "";
+  passUrl.searchParams.set("token", bookingToken);
+
+  if(autoPrint) {
+    passUrl.searchParams.set("autoprint", "1");
+  }
+
+  return passUrl.href;
+}
 
 function renderPass(b) {
   currentPassToken = b.booking_token || "";
 
-  $("bookingForm").hidden=true;
-  $("passArea").hidden=false;
-  $("passTemple").textContent=b.temple_name||"";
-  $("passCity").textContent=b.temple_city||"City not listed";
-  $("passName").textContent=b.devotee_name||$("devoteeName").textContent;
-  $("passCount").textContent=b.devotee_count??"";
-  $("passDate").textContent=b.darshan_date||"";
-  $("passTime").textContent=b.time_slot||"";
-  $("passToken").textContent=currentPassToken;
+  $("bookingForm").hidden = true;
+  $("passArea").hidden = false;
+  $("passTemple").textContent = b.temple_name || "";
+  $("passCity").textContent = b.temple_city || "City not listed";
+  $("passName").textContent = b.devotee_name || $("devoteeName").textContent;
+  $("passCount").textContent = b.devotee_count ?? "";
+  $("passDate").textContent = b.darshan_date || "";
+  $("passTime").textContent = b.time_slot || "";
+  $("passToken").textContent = currentPassToken;
 
-  const qr=$("passQR");
+  const qr = $("passQR");
   qr.replaceChildren();
 
-  if(window.QRCode && currentPassToken) {
-    const passUrl=new URL("darshan-pass.html",window.location.href);
-    passUrl.searchParams.set("token",currentPassToken);
-
-    new QRCode(qr,{
-      text:passUrl.href,
-      width:180,
-      height:180,
-      correctLevel:QRCode.CorrectLevel.M
+  if (window.QRCode && currentPassToken) {
+    new QRCode(qr, {
+      text: getHostedPassUrl(currentPassToken),
+      width: 180,
+      height: 180,
+      correctLevel: QRCode.CorrectLevel.M
     });
   } else {
-    qr.appendChild(txt("p","notice","Unable to generate QR code."));
+    qr.appendChild(txt("p", "notice", "Unable to generate QR code."));
   }
 
   qr.appendChild(txt(
@@ -686,6 +692,20 @@ function renderBookings() {
       openModal("bookingModal");
     });
     c.appendChild(view);
+
+    const openHostedPass=txt("button","small-action","Open Full Pass");
+    openHostedPass.type="button";
+    openHostedPass.addEventListener("click",()=>{
+      const bookingToken=b.booking_ref;
+
+      if(!bookingToken) {
+        showToast("This booking has no reference token.");
+        return;
+      }
+
+      window.open(getHostedPassUrl(bookingToken), "_blank", "noopener");
+    });
+    c.appendChild(openHostedPass);
 
     if(st(b.status)==="confirmed"&&b.booking_date>=today) {
       const cancel=txt("button","small-action","Cancel Booking");
@@ -1020,7 +1040,6 @@ function openLost() {
 
   addField(f,"VISUAL DESCRIPTION","lostDescription","textarea","Describe clothing, colour, identifying marks or item details");
   addField(f,"CONTACT PERSON / GUARDIAN","lostContact","text","Contact person's name");
-
   addField(f,"CONTACT MOBILE (OPTIONAL)","lostMobile","tel","10-digit mobile number");
 
   const photo=addField(f,"REFERENCE PHOTO (OPTIONAL)","lostPhoto","file","");
@@ -1074,18 +1093,15 @@ function bindEvents() {
   $("bookingTemple").addEventListener("change",loadAvailableSlots);
   $("bookingDate").addEventListener("change",loadAvailableSlots);
 
-  // Open the full hosted pass and trigger its print dialog.
-  $("printPass").addEventListener("click", () => {
-    if (!currentPassToken) {
+  // Print / Save opens the full hosted pass page, not the dashboard modal.
+  $("printPass").addEventListener("click",()=>{
+    if(!currentPassToken) {
       showToast("Open a booking's E-Pass first.");
       return;
     }
 
-    const passUrl = new URL("darshan-pass.html", window.location.href);
-    passUrl.searchParams.set("token", currentPassToken);
-    passUrl.searchParams.set("autoprint", "1");
-
-    window.open(passUrl.href, "_blank");
+    const passUrl=getHostedPassUrl(currentPassToken,true);
+    window.open(passUrl,"_blank","noopener");
   });
 
   $("newBooking").addEventListener("click",()=>closeModal("bookingModal"));
