@@ -380,7 +380,7 @@ function renderTemples() {
       c.appendChild(txt("p","festival-detail",`✦ ${info.festivalName}`));
     }
 
-    c.appendChild(txt("p","crowd-demo-note","Demo estimate · Not live data"));
+    
     c.appendChild(txt("div","temple-rule",""));
 
     const meta=txt("div","temple-meta","");
