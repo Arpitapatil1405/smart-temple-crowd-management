@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 
 <style>
 :root {
@@ -706,19 +707,34 @@ input:focus, select:focus {
         </div>
       </section>
 
-      <section class="panel">
-        <div class="panel-head">
-          <h2>Live Crowd Detection</h2>
-          <span class="tag">YOLOv8</span>
-        </div>
+      
+<section class="panel" id="crowdDetectionPanel">
+  <div class="panel-head">
+    <h2>Live Crowd Detection</h2>
+    <span class="tag">YOLOv8n · ONNX</span>
+  </div>
 
-        <div class="metric-number" id="cameraCount">—</div>
-        <p>Detected people in the webcam frame</p>
-        <p class="notice">
-          Webcam/YOLOv8 integration is a separate next step.
-          This panel is a placeholder, not a live sensor reading.
-        </p>
-      </section>
+  <div style="position:relative;background:#101827;border-radius:12px;overflow:hidden;min-height:220px">
+    <video id="crowdVideo" autoplay muted playsinline
+      style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
+    <canvas id="crowdCanvas" aria-label="Webcam frame with detected people"
+      style="position:relative;z-index:1;display:block;width:100%;height:auto;min-height:220px"></canvas>
+    <p id="crowdPlaceholder" style="padding:35px 15px;text-align:center;color:#fff">
+      Camera is off. Start the camera to begin crowd detection.
+    </p>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+    <button class="primary" id="startCrowdBtn" type="button">Start Camera</button>
+    <button class="secondary" id="stopCrowdBtn" type="button" disabled>Stop Camera</button>
+  </div>
+
+  <div class="metric-number" id="cameraCount">—</div>
+  <p>People detected in the current webcam frame</p>
+  <p id="crowdStatus" class="notice" role="status">Camera stopped.</p>
+  <p class="notice">Prototype note: this counts people visible to this device's webcam. It is not a direct CCTV feed or a temple-wide count.</p>
+</section>
+
     </div>
   </div>
 
@@ -1249,6 +1265,9 @@ function showPass(data) {
 }
 
 async function startScanner() {
+  // Release the webcam if crowd detection is currently using it.
+  if (crowdStream) await stopCrowdCamera();
+
   if (typeof Html5Qrcode === "undefined") {
     msg(
       "scanResult",
@@ -1382,6 +1401,256 @@ async function verifyToken(raw) {
   );
 }
 
+
+/* --------------------------------------------------
+   BROWSER-SIDE YOLOv8 CROWD DETECTION
+   Model path assumes models/yolov8n.onnx is in the
+   same project folder as this HTML file.
+-------------------------------------------------- */
+const CROWD_MODEL_PATH = "./models/yolov8n.onnx";
+const CROWD_INPUT_SIZE = 640;
+const CROWD_CONFIDENCE = 0.35;
+const CROWD_IOU = 0.45;
+
+let crowdSession = null;
+let crowdStream = null;
+let crowdLoopTimer = null;
+let crowdBusy = false;
+let crowdStopped = true;
+
+function crowdStatus(text, isError = false) {
+  const el = $("crowdStatus");
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = isError ? "#c83f56" : "#607086";
+}
+
+async function loadCrowdModel() {
+  if (crowdSession) return crowdSession;
+  if (typeof ort === "undefined") {
+    throw new Error("ONNX Runtime failed to load. Check your internet connection.");
+  }
+  ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
+  crowdStatus("Loading YOLOv8n model…");
+  crowdSession = await ort.InferenceSession.create(CROWD_MODEL_PATH, {
+    executionProviders: ["wasm"]
+  });
+  return crowdSession;
+}
+
+function crowdIoU(a, b) {
+  const x1 = Math.max(a.x1, b.x1);
+  const y1 = Math.max(a.y1, b.y1);
+  const x2 = Math.min(a.x2, b.x2);
+  const y2 = Math.min(a.y2, b.y2);
+  const intersection = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+  const areaA = Math.max(0, a.x2 - a.x1) * Math.max(0, a.y2 - a.y1);
+  const areaB = Math.max(0, b.x2 - b.x1) * Math.max(0, b.y2 - b.y1);
+  return intersection / (areaA + areaB - intersection + 1e-6);
+}
+
+function crowdNms(boxes) {
+  boxes.sort((a, b) => b.score - a.score);
+  const kept = [];
+  while (boxes.length) {
+    const best = boxes.shift();
+    kept.push(best);
+    boxes = boxes.filter(box => crowdIoU(best, box) < CROWD_IOU);
+  }
+  return kept;
+}
+
+function decodeCrowdPeople(tensor) {
+  const dims = tensor.dims;
+  const data = tensor.data;
+  if (!dims || dims.length !== 3) {
+    throw new Error("Unexpected model output shape: " + JSON.stringify(dims));
+  }
+
+  // Standard YOLOv8 COCO detection output is [1, 84, 8400] or [1, 8400, 84].
+  let channelsFirst;
+  let featureCount;
+  let candidateCount;
+  if (dims[1] < dims[2]) {
+    channelsFirst = true;
+    featureCount = dims[1];
+    candidateCount = dims[2];
+  } else {
+    channelsFirst = false;
+    candidateCount = dims[1];
+    featureCount = dims[2];
+  }
+  if (featureCount < 5) {
+    throw new Error("Model output has too few features: " + JSON.stringify(dims));
+  }
+
+  const get = (candidate, feature) => channelsFirst
+    ? data[feature * candidateCount + candidate]
+    : data[candidate * featureCount + feature];
+
+  const detections = [];
+  for (let i = 0; i < candidateCount; i++) {
+    // COCO class 0 is person. YOLOv8 output has 4 box values then class scores.
+    const score = get(i, 4);
+    if (!Number.isFinite(score) || score < CROWD_CONFIDENCE) continue;
+
+    const cx = get(i, 0);
+    const cy = get(i, 1);
+    const w = get(i, 2);
+    const h = get(i, 3);
+    if (![cx, cy, w, h].every(Number.isFinite) || w <= 0 || h <= 0) continue;
+
+    detections.push({
+      x1: cx - w / 2,
+      y1: cy - h / 2,
+      x2: cx + w / 2,
+      y2: cy + h / 2,
+      score
+    });
+  }
+  return crowdNms(detections);
+}
+
+function drawCrowdDetections(boxes, sourceWidth, sourceHeight) {
+  const canvas = $("crowdCanvas");
+  const video = $("crowdVideo");
+  const ctx = canvas.getContext("2d");
+  canvas.width = sourceWidth;
+  canvas.height = sourceHeight;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const scaleX = sourceWidth / CROWD_INPUT_SIZE;
+  const scaleY = sourceHeight / CROWD_INPUT_SIZE;
+  ctx.lineWidth = Math.max(2, sourceWidth / 320);
+  ctx.font = `bold ${Math.max(14, sourceWidth / 35)}px Arial`;
+
+  boxes.forEach((b, index) => {
+    const x = Math.max(0, b.x1 * scaleX);
+    const y = Math.max(0, b.y1 * scaleY);
+    const w = Math.min(canvas.width - x, (b.x2 - b.x1) * scaleX);
+    const h = Math.min(canvas.height - y, (b.y2 - b.y1) * scaleY);
+    ctx.strokeStyle = "#38e07b";
+    ctx.fillStyle = "#38e07b";
+    ctx.strokeRect(x, y, w, h);
+    const label = `Person ${Math.round(b.score * 100)}%`;
+    const labelWidth = ctx.measureText(label).width + 10;
+    const labelY = Math.max(0, y - 24);
+    ctx.fillRect(x, labelY, labelWidth, 23);
+    ctx.fillStyle = "#062615";
+    ctx.fillText(label, x + 5, labelY + 16);
+    ctx.fillStyle = "#38e07b";
+  });
+}
+
+async function runCrowdInference() {
+  if (crowdStopped || crowdBusy || !crowdSession) return;
+  const video = $("crowdVideo");
+  if (!video || video.readyState < 2 || !video.videoWidth) return;
+
+  crowdBusy = true;
+  try {
+    const size = CROWD_INPUT_SIZE;
+    const temp = document.createElement("canvas");
+    temp.width = size;
+    temp.height = size;
+    const tctx = temp.getContext("2d", { willReadFrequently: true });
+    tctx.drawImage(video, 0, 0, size, size);
+    const pixels = tctx.getImageData(0, 0, size, size).data;
+    const input = new Float32Array(1 * 3 * size * size);
+    const plane = size * size;
+    for (let i = 0; i < plane; i++) {
+      input[i] = pixels[i * 4] / 255;
+      input[plane + i] = pixels[i * 4 + 1] / 255;
+      input[2 * plane + i] = pixels[i * 4 + 2] / 255;
+    }
+
+    const tensor = new ort.Tensor("float32", input, [1, 3, size, size]);
+    const inputName = crowdSession.inputNames[0];
+    const result = await crowdSession.run({ [inputName]: tensor });
+    const output = result[crowdSession.outputNames[0]];
+    const boxes = decodeCrowdPeople(output);
+
+    // The webcam frame is stretched to 640x640 for inference; this maps the boxes
+    // back to the displayed frame. For a production deployment, use letterboxing.
+    drawCrowdDetections(boxes, video.videoWidth, video.videoHeight);
+    $("cameraCount").textContent = boxes.length;
+    crowdStatus(`Detection active · ${boxes.length} person(s) in current frame`);
+  } catch (error) {
+    console.error("Crowd inference error:", error);
+    crowdStatus("Detection error: " + (error.message || error), true);
+    clearInterval(crowdLoopTimer);
+    crowdLoopTimer = null;
+  } finally {
+    crowdBusy = false;
+  }
+}
+
+async function startCrowdCamera() {
+  // The QR scanner and crowd detector must not compete for the same webcam.
+  if (scannerRunning) await stopScanner();
+
+  const startBtn = $("startCrowdBtn");
+  const stopBtn = $("stopCrowdBtn");
+  startBtn.disabled = true;
+  crowdStatus("Preparing model and camera…");
+
+  try {
+    await loadCrowdModel();
+    crowdStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" },
+      audio: false
+    });
+    const video = $("crowdVideo");
+    video.srcObject = crowdStream;
+    video.style.display = "block";
+    $("crowdPlaceholder").classList.add("hidden");
+    await video.play();
+
+    crowdStopped = false;
+    stopBtn.disabled = false;
+    $("crowdCanvas").style.display = "block";
+    crowdStatus("Camera active. Detecting people…");
+    await runCrowdInference();
+    crowdLoopTimer = setInterval(runCrowdInference, 350);
+  } catch (error) {
+    console.error("Could not start crowd detection:", error);
+    await stopCrowdCamera();
+    crowdStatus("Could not start: " + (error.message || error) +
+      ". Check camera permission, model path, and browser Console.", true);
+  } finally {
+    startBtn.disabled = false;
+  }
+}
+
+async function stopCrowdCamera() {
+  crowdStopped = true;
+  if (crowdLoopTimer) {
+    clearInterval(crowdLoopTimer);
+    crowdLoopTimer = null;
+  }
+  if (crowdStream) {
+    crowdStream.getTracks().forEach(track => track.stop());
+    crowdStream = null;
+  }
+  const video = $("crowdVideo");
+  if (video) {
+    video.pause();
+    video.srcObject = null;
+    video.style.display = "none";
+  }
+  const canvas = $("crowdCanvas");
+  if (canvas) {
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  if ($("crowdPlaceholder")) $("crowdPlaceholder").classList.remove("hidden");
+  if ($("cameraCount")) $("cameraCount").textContent = "—";
+  if ($("startCrowdBtn")) $("startCrowdBtn").disabled = false;
+  if ($("stopCrowdBtn")) $("stopCrowdBtn").disabled = true;
+  crowdStatus("Camera stopped.");
+}
+
 function bindEvents() {
   $("slotSelect").addEventListener("change", selectSlot);
 
@@ -1441,6 +1710,9 @@ function bindEvents() {
       $("callNextBtn").disabled = false;
     }
   });
+
+  $("startCrowdBtn").addEventListener("click", startCrowdCamera);
+  $("stopCrowdBtn").addEventListener("click", stopCrowdCamera);
 
   $("startScanBtn").addEventListener("click", startScanner);
   $("stopScanBtn").addEventListener("click", stopScanner);
