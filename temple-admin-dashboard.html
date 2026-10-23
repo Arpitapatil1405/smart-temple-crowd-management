@@ -1338,7 +1338,7 @@ async function verifyToken(raw) {
     token = url.searchParams.get("token") || raw;
   } catch (_) {}
 
-  if (!/^(ONL|WLK)-[0-9]+$/i.test(token)) {
+  if (!/^[A-Z0-9]+-(ONL|WLK)-[0-9]+$/i.test(token)) {
     msg(
       "scanResult",
       "This QR does not contain a recognised ONL/WLK token.",
