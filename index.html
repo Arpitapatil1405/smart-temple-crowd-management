@@ -1,515 +1,698 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#ffffff">
-<title>Smart Temple | Efficient Devotee Flow Management</title>
-<style>
-:root {
-  --saffron: #ff6900;
-  --saffron-dark: #dc5200;
-  --ink: #202b3d;
-  --muted: #647084;
-  --paper: #fffdf9;
-  --line: #e7e9ed;
-  --green: #12b76a;
-}
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body {
-  margin: 0;
-  font-family: Inter, "Segoe UI", Arial, sans-serif;
-  color: var(--ink);
-  background: var(--paper);
-}
-button, a { font: inherit; }
-button { cursor: pointer; }
-.site-header {
-  height: 86px;
-  padding: 0 28px;
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  background: #fff;
-  border-bottom: 1px solid #e9eaec;
-  position: sticky;
-  top: 0;
-  z-index: 20;
-}
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 11px;
-  color: var(--ink);
-  text-decoration: none;
-  font-weight: 900;
-  font-size: 27px;
-  letter-spacing: -1px;
-  white-space: nowrap;
-}
-.brand-icon {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  background: var(--saffron);
-  border-radius: 11px;
-}
-.brand-icon svg { width: 27px; height: 27px; }
-.main-nav {
-  display: flex;
-  align-items: center;
-  gap: 29px;
-  height: 100%;
-  margin-left: auto;
-}
-.nav-link {
-  height: 100%;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #4e596b;
-  font-size: 15px;
-  font-weight: 700;
-  position: relative;
-}
-.nav-link:hover, .nav-link.active { color: var(--saffron); }
-.nav-link.active::after {
-  content: "";
-  position: absolute;
-  bottom: 23px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--saffron);
-}
-.language-switch {
-  display: flex;
-  align-items: center;
-  padding: 3px;
-  background: #f4f5f7;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-}
-.language-switch button {
-  border: 0;
-  border-radius: 11px;
-  background: transparent;
-  padding: 8px 11px;
-  color: #697386;
-  font-weight: 800;
-}
-.language-switch button.active {
-  color: #202b3d;
-  background: white;
-  box-shadow: 0 1px 4px #00000014;
-}
-.menu-toggle {
-  display: none;
-  border: 0;
-  background: transparent;
-  font-size: 25px;
-  color: var(--ink);
-}
-.hero {
-  min-height: min(760px, calc(100vh - 86px));
-  height: 720px;
-  max-height: 850px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  color: white;
-  background: #28231e url("assets/temple-hero.png") center 52% / cover no-repeat;
-}
-.hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, rgba(5, 10, 13, .88) 0%, rgba(9, 12, 13, .70) 35%, rgba(17, 15, 12, .28) 67%, rgba(16, 13, 10, .05) 100%),
-    linear-gradient(0deg, rgba(0, 0, 0, .40) 0%, transparent 42%);
-}
-.hero-content {
-  position: relative;
-  z-index: 1;
-  width: min(100% - 48px, 1510px);
-  margin: 0 auto;
-  padding: 40px 0 56px;
-}
-.hero-copy-wrap { max-width: 900px; }
-.hero h1 {
-  margin: 0 0 24px;
-  font-size: clamp(52px, 6.2vw, 94px);
-  line-height: 1.04;
-  letter-spacing: -3.5px;
-  font-weight: 900;
-}
-.hero h1 span { color: var(--saffron); }
-.hero-description {
-  margin: 0 0 31px;
-  font-size: clamp(19px, 2.05vw, 28px);
-  line-height: 1.43;
-  font-weight: 650;
-  color: #f3f3f3;
-}
-.hero-description strong {
-  display: inline-block;
-  color: #ff9419;
-  border-bottom: 2px solid #ff9419;
-  padding-bottom: 3px;
-  font-weight: 800;
-}
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-.btn {
-  min-height: 75px;
-  padding: 0 30px;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 11px;
-  color: white;
-  font-size: 17px;
-  font-weight: 800;
-  text-decoration: none;
-  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
-}
-.btn:hover { transform: translateY(-2px); box-shadow: 0 9px 22px #0003; }
-.btn-primary { background: var(--saffron); }
-.btn-primary:hover { background: var(--saffron-dark); }
-.btn-outline {
-  background: rgba(15, 15, 15, .62);
-  border-color: rgba(255, 255, 255, .72);
-  backdrop-filter: blur(7px);
-}
-.live-indicator {
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 0 4px rgba(18, 183, 106, .18);
-}
-.hero-benefits {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin-top: 35px;
-  color: #f4f4f4;
-  font-size: 12px;
-  font-weight: 650;
-}
-.hero-benefits span { display: inline-flex; align-items: center; gap: 7px; }
-.hero-benefits b { color: #ffb15e; }
-.hero-scroll {
-  position: absolute;
-  bottom: 23px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: #ffffffb8;
-}
-.hero-scroll span { color: white; margin-left: 8px; }
-.content-section {
-  max-width: 1240px;
-  padding: 64px 28px 74px;
-  margin: 0 auto;
-}
-.section-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: end;
-  gap: 20px;
-  margin-bottom: 26px;
-}
-.eyebrow {
-  color: var(--saffron-dark);
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 1.5px;
-}
-.section-heading h2 {
-  font-size: clamp(28px, 3.2vw, 38px);
-  letter-spacing: -1.2px;
-  margin: 9px 0 0;
-}
-.section-heading p {
-  color: var(--muted);
-  margin: 10px 0 0;
-  line-height: 1.6;
-}
-.small-link {
-  color: var(--saffron-dark);
-  font-size: 13px;
-  font-weight: 800;
-  text-underline-offset: 4px;
-  white-space: nowrap;
-}
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-}
-.feature-card {
-  padding: 23px;
-  background: white;
-  border: 1px solid var(--line);
-  border-radius: 15px;
-  box-shadow: 0 4px 15px #1e293b08;
-}
-.feature-icon {
-  width: 45px;
-  height: 45px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  margin-bottom: 17px;
-  font-size: 22px;
-  font-weight: 800;
-}
-.icon-orange { background: #fff0e5; color: var(--saffron); }
-.icon-green { background: #e8fbf1; color: #078a52; }
-.icon-blue { background: #eaf1ff; color: #2463eb; }
-.icon-purple { background: #f5eaff; color: #9333ea; }
-.feature-card h3 { font-size: 16px; margin: 0 0 8px; }
-.feature-card p { color: var(--muted); font-size: 13px; line-height: 1.65; margin: 0; }
-.site-footer {
-  background: #172033;
-  color: #e8ebf2;
-  padding: 24px 28px;
-  text-align: center;
-  font-size: 11px;
-}
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: 24px;
-  transform: translate(-50%, 20px);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 50;
-  padding: 13px 18px;
-  background: #172033;
-  color: white;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px #0003;
-  font-size: 12px;
-  font-weight: 700;
-  transition: opacity .2s, transform .2s;
-  max-width: calc(100vw - 30px);
-  text-align: center;
-}
-.toast.show { opacity: 1; transform: translate(-50%, 0); }
-@media (min-width: 1500px) {
-  .hero-content { width: min(100% - 9%, 1510px); }
-}
-@media (max-width: 1000px) {
-  .site-header { padding: 0 18px; gap: 18px; }
-  .brand { font-size: 22px; }
-  .main-nav { gap: 18px; }
-  .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .hero { background-position: 56% center; }
-}
-@media (max-width: 720px) {
-  .site-header { height: 72px; }
-  .brand { font-size: 20px; }
-  .brand-icon { width: 38px; height: 38px; }
-  .menu-toggle { display: block; }
-  .main-nav {
-    display: none;
-    position: absolute;
-    top: 72px;
-    left: 0;
-    right: 0;
-    height: auto;
-    padding: 10px 18px 16px;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-    background: white;
-    box-shadow: 0 10px 18px #00000012;
-  }
-  .main-nav.open { display: flex; }
-  .nav-link { height: 43px; text-align: left; }
-  .nav-link.active::after { display: none; }
-  .language-switch { margin-left: auto; }
-  .language-switch button { padding: 7px 9px; font-size: 11px; }
-  .hero { height: calc(100svh - 72px); min-height: 590px; background-position: 56% center; }
-  .hero::before {
-    background:
-      linear-gradient(90deg, rgba(5, 10, 13, .82), rgba(9, 12, 13, .48) 70%, rgba(17, 15, 12, .18)),
-      linear-gradient(0deg, rgba(0, 0, 0, .45), transparent 50%);
-  }
-  .hero-content { width: calc(100% - 40px); padding: 28px 0; }
-  .hero h1 { font-size: clamp(48px, 10vw, 68px); letter-spacing: -2px; }
-  .hero-description { font-size: 18px; }
-  .btn { min-height: 60px; padding: 0 18px; font-size: 14px; }
-  .hero-actions { gap: 12px; }
-  .hero-benefits { flex-direction: column; gap: 9px; margin-top: 25px; }
-  .hero-scroll { display: none; }
-  .content-section { padding: 42px 18px 50px; }
-  .section-heading { align-items: start; flex-direction: column; }
-}
-@media (max-width: 430px) {
-  .brand { font-size: 18px; gap: 8px; }
-  .brand-icon { width: 34px; height: 34px; }
-  .hero h1 { font-size: 47px; }
-  .hero-actions { flex-direction: column; align-items: stretch; max-width: 310px; }
-  .feature-grid { grid-template-columns: 1fr; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ffffff">
+  <title>Smart Temple | Efficient Devotee Flow Management</title>
+
+  <style>
+    :root {
+      --saffron: #ff6900;
+      --saffron-dark: #dc5200;
+      --ink: #202b3d;
+      --muted: #647084;
+      --paper: #fffdf9;
+      --line: #e7e9ed;
+      --green: #12b76a;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 90px;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    button, a { font: inherit; }
+    button { cursor: pointer; }
+
+    .site-header {
+      min-height: 82px;
+      padding: 12px clamp(16px, 3vw, 42px);
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 3px 14px #17203308;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 900;
+      font-size: clamp(20px, 2vw, 26px);
+      letter-spacing: -1px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .brand-icon {
+      width: 43px;
+      height: 43px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: var(--saffron);
+      border-radius: 12px;
+    }
+
+    .brand-icon svg { width: 27px; height: 27px; }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(12px, 2vw, 28px);
+      margin-left: auto;
+    }
+
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 2px;
+      border: 0;
+      background: transparent;
+      color: #4e596b;
+      font-size: 14px;
+      font-weight: 750;
+      text-decoration: none;
+      white-space: nowrap;
+      position: relative;
+      transition: color .2s ease;
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      color: var(--saffron-dark);
+    }
+
+    .nav-link.active::after {
+      content: "";
+      position: absolute;
+      bottom: 1px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      border-radius: 4px;
+      background: var(--saffron);
+    }
+
+    .nav-link.crowd-link {
+      gap: 8px;
+    }
+
+    .nav-live-dot {
+      width: 9px;
+      height: 9px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px #12b76a20;
+      flex-shrink: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .login-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 17px;
+      border: 1px solid #f2b58f;
+      border-radius: 10px;
+      color: var(--saffron-dark);
+      background: #fff8f2;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+      transition: background .2s ease, transform .2s ease;
+    }
+
+    .login-link:hover {
+      background: #fff0e5;
+      transform: translateY(-1px);
+    }
+
+    .menu-toggle {
+      display: none;
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      color: var(--ink);
+      font-size: 23px;
+    }
+
+    .hero {
+      min-height: min(760px, calc(100svh - 82px));
+      height: 720px;
+      max-height: 850px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      color: white;
+      background: #28231e url("assets/temple-hero.png") center 52% / cover no-repeat;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg,
+          rgba(5,10,13,.88) 0%,
+          rgba(9,12,13,.70) 35%,
+          rgba(17,15,12,.28) 67%,
+          rgba(16,13,10,.05) 100%),
+        linear-gradient(0deg, rgba(0,0,0,.40), transparent 42%);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      width: min(100% - 48px, 1510px);
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    .hero-copy-wrap { max-width: 900px; }
+
+    .hero h1 {
+      margin: 0 0 24px;
+      font-size: clamp(48px, 6.2vw, 88px);
+      line-height: 1.04;
+      letter-spacing: -3px;
+      font-weight: 900;
+    }
+
+    .hero h1 span { color: var(--saffron); }
+
+    .hero-description {
+      margin: 0 0 31px;
+      font-size: clamp(18px, 2.05vw, 27px);
+      line-height: 1.5;
+      font-weight: 650;
+      color: #f3f3f3;
+    }
+
+    .hero-description strong {
+      display: inline-block;
+      color: #ff9419;
+      border-bottom: 2px solid #ff9419;
+      padding-bottom: 3px;
+      font-weight: 800;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .btn {
+      min-height: 62px;
+      padding: 0 23px;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 11px;
+      color: white;
+      font-size: 15px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 9px 22px #0003;
+    }
+
+    .btn-primary { background: var(--saffron); }
+    .btn-primary:hover { background: var(--saffron-dark); }
+
+    .btn-outline {
+      background: rgba(15,15,15,.62);
+      border-color: rgba(255,255,255,.72);
+      backdrop-filter: blur(7px);
+    }
+
+    .live-indicator {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(18,183,106,.18);
+    }
+
+    .hero-benefits {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 30px;
+      color: #f4f4f4;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .hero-benefits span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .hero-benefits b { color: #ffb15e; }
+
+    .hero-scroll {
+      position: absolute;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #ffffffb8;
+      white-space: nowrap;
+    }
+
+    .hero-scroll span { color: white; margin-left: 8px; }
+
+    .content-section {
+      max-width: 1240px;
+      padding: 64px 28px 74px;
+      margin: 0 auto;
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 20px;
+      margin-bottom: 26px;
+    }
+
+    .eyebrow {
+      color: var(--saffron-dark);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+    }
+
+    .section-heading h2 {
+      font-size: clamp(28px, 3.2vw, 38px);
+      letter-spacing: -1.2px;
+      margin: 9px 0 0;
+    }
+
+    .section-heading p {
+      color: var(--muted);
+      margin: 10px 0 0;
+      line-height: 1.6;
+    }
+
+    .small-link {
+      color: var(--saffron-dark);
+      font-size: 13px;
+      font-weight: 800;
+      text-underline-offset: 4px;
+      white-space: nowrap;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .feature-card {
+      padding: 23px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      box-shadow: 0 4px 15px #1e293b08;
+    }
+
+    .feature-icon {
+      width: 45px;
+      height: 45px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 17px;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .icon-orange { background: #fff0e5; color: var(--saffron); }
+    .icon-green { background: #e8fbf1; color: #078a52; }
+    .icon-blue { background: #eaf1ff; color: #2463eb; }
+    .icon-purple { background: #f5eaff; color: #9333ea; }
+
+    .feature-card h3 { font-size: 16px; margin: 0 0 8px; }
+
+    .feature-card p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+      margin: 0;
+    }
+
+    .site-footer {
+      background: #172033;
+      color: #e8ebf2;
+      padding: 24px 28px;
+      text-align: center;
+      font-size: 11px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translate(-50%, 20px);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 200;
+      padding: 13px 18px;
+      background: #172033;
+      color: white;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px #0003;
+      font-size: 12px;
+      font-weight: 700;
+      transition: opacity .2s, transform .2s;
+      max-width: calc(100vw - 30px);
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @media (min-width: 1500px) {
+      .hero-content { width: min(91%, 1510px); }
+    }
+
+    @media (max-width: 1050px) {
+      .site-header { gap: 15px; }
+      .brand { font-size: 21px; }
+      .main-nav { gap: 14px; }
+      .nav-link { font-size: 13px; }
+      .login-link { padding: 0 12px; }
+      .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 800px) {
+      .site-header { min-height: 72px; }
+      .menu-toggle {
+        display: inline-grid;
+        place-items: center;
+      }
+
+      .header-actions { margin-left: auto; }
+
+      .main-nav {
+        display: none;
+        position: absolute;
+        top: calc(100% + 1px);
+        left: 0;
+        right: 0;
+        padding: 12px 18px 18px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        margin: 0;
+        background: white;
+        border-bottom: 1px solid var(--line);
+        box-shadow: 0 12px 20px #00000012;
+      }
+
+      .main-nav.open { display: flex; }
+
+      .nav-link {
+        min-height: 47px;
+        justify-content: flex-start;
+        padding: 0 12px;
+        border-radius: 8px;
+      }
+
+      .nav-link:hover,
+      .nav-link.active { background: #fff6ef; }
+
+      .nav-link.active::after { display: none; }
+
+      .hero {
+        height: auto;
+        min-height: calc(100svh - 72px);
+        background-position: 56% center;
+      }
+
+      .hero::before {
+        background:
+          linear-gradient(90deg, rgba(5,10,13,.84), rgba(9,12,13,.48) 75%, rgba(17,15,12,.18)),
+          linear-gradient(0deg, rgba(0,0,0,.45), transparent 50%);
+      }
+
+      .hero-content {
+        width: calc(100% - 40px);
+        padding: 44px 0;
+      }
+
+      .hero h1 { letter-spacing: -2px; }
+      .hero-description { font-size: 18px; }
+      .btn { min-height: 56px; padding: 0 17px; font-size: 14px; }
+      .hero-benefits { gap: 12px; }
+      .content-section { padding: 44px 20px 54px; }
+    }
+
+    @media (max-width: 480px) {
+      .brand { font-size: 18px; gap: 8px; }
+      .brand-icon { width: 36px; height: 36px; }
+      .login-link { min-height: 39px; padding: 0 10px; font-size: 12px; }
+      .hero h1 { font-size: clamp(43px, 12vw, 56px); }
+      .hero-actions { flex-direction: column; align-items: stretch; max-width: 340px; }
+      .hero-benefits { flex-direction: column; gap: 9px; }
+      .hero-scroll { display: none; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .section-heading { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
 </head>
+
 <body>
-<header class="site-header">
-  <a class="brand" href="#home" aria-label="Smart Temple home">
-    <span class="brand-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-        <circle cx="9" cy="7" r="4"></circle>
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>
-      </svg>
-    </span>
-    <span>Smart Temple</span>
-  </a>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Smart Temple home">
+      <span class="brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+      </span>
+      <span>Smart Temple</span>
+    </a>
 
-  <nav class="main-nav" id="mainNav" aria-label="Main navigation">
-    <a class="nav-link active" href="#home" data-nav="home">Home</a>
-    <a class="nav-link" href="#booking" data-nav="booking">Darshan Booking</a>
-    <a class="nav-link" href="live-crowd-status.html" data-nav="crowd">Live Crowd Status</a>
-  </nav>
+    <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+      <a class="nav-link active" href="index.html" data-nav="home">Home</a>
 
-  <div class="language-switch" aria-label="Language selection">
-    <button type="button" class="active" data-lang="en">EN</button>
-    <button type="button" data-lang="hi">हिन्दी</button>
-  </div>
-  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
-</header>
+      <a class="nav-link" href="devotee-dashboard.html" data-nav="booking">
+        Darshan Booking
+      </a>
 
-<main>
-  <section class="hero" id="home" aria-label="Welcome to Smart Temple">
-    <div class="hero-content">
-      <div class="hero-copy-wrap">
-        <h1 id="heroTitle">Welcome to<br><span>Smart Temple</span></h1>
-        <p class="hero-description" id="heroDescription">
-          We are introducing the innovative solution to<br class="desktop-break">
-          <strong>Efficient Devotee Flow Management</strong>
-        </p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="#booking" id="bookButton">
-            <span aria-hidden="true">▣</span>
-            <span>Book Darshan</span>
-            <span aria-hidden="true">→</span>
-          </a>
-          <a class="btn btn-outline" href="live-crowd-status.html" id="crowdButton">
-            <span class="live-indicator" aria-hidden="true"></span>
-            <span>Live Crowd Status</span>
-          </a>
-        </div>
-        <div class="hero-benefits">
-          <span><b>✓</b> Queue-aware planning</span>
-          <span><b>✓</b> Digital darshan passes</span>
-          <span><b>✓</b> Crowd-status guidance</span>
+      <a class="nav-link crowd-link"
+         href="live-crowd-status.html"
+         data-nav="crowd">
+        <span class="nav-live-dot" aria-hidden="true"></span>
+        Live Crowd Status
+      </a>
+    </nav>
+
+    <div class="header-actions">
+      <a class="login-link" id="loginLink" href="login.html">Login</a>
+      <button class="menu-toggle" id="menuToggle"
+        type="button" aria-label="Open navigation"
+        aria-controls="mainNav" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="home" aria-label="Welcome to Smart Temple">
+      <div class="hero-content">
+        <div class="hero-copy-wrap">
+          <h1 id="heroTitle">Welcome to<br><span>Smart Temple</span></h1>
+
+          <p class="hero-description" id="heroDescription">
+            We are introducing the innovative solution to<br class="desktop-break">
+            <strong>Efficient Devotee Flow Management</strong>
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="devotee-dashboard.html" id="bookButton">
+              <span aria-hidden="true">▣</span>
+              <span>Book Darshan</span>
+              <span aria-hidden="true">→</span>
+            </a>
+
+            <a class="btn btn-outline" href="live-crowd-status.html" id="crowdButton">
+              <span class="live-indicator" aria-hidden="true"></span>
+              <span>Live Crowd Status</span>
+            </a>
+          </div>
+
+          <div class="hero-benefits">
+            <span><b>✓</b> Queue-aware planning</span>
+            <span><b>✓</b> Digital darshan passes</span>
+            <span><b>✓</b> Crowd-status guidance</span>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="hero-scroll">SCROLL TO EXPLORE <span>↓</span></div>
-  </section>
 
-  <section class="content-section" id="features">
-    <div class="section-heading">
-      <div>
-        <span class="eyebrow">A BETTER WAY TO PLAN YOUR VISIT</span>
-        <h2>Darshan, made simpler.</h2>
-        <p>Helpful tools for a smoother and more organised temple visit.</p>
+      <div class="hero-scroll">SCROLL TO EXPLORE <span>↓</span></div>
+    </section>
+
+    <section class="content-section" id="features">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">A BETTER WAY TO PLAN YOUR VISIT</span>
+          <h2>Darshan, made simpler.</h2>
+          <p>Helpful tools for a smoother and more organised temple visit.</p>
+        </div>
+
+        <a class="small-link" href="devotee-dashboard.html">Plan a visit →</a>
       </div>
-      <a class="small-link" href="#booking">Plan a visit →</a>
-    </div>
-    <div class="feature-grid">
-      <article class="feature-card">
-        <div class="feature-icon icon-orange" aria-hidden="true">▣</div>
-        <h3>Book ahead</h3>
-        <p>Choose a temple, date and time slot before you arrive.</p>
-      </article>
-      <article class="feature-card">
-        <div class="feature-icon icon-green" aria-hidden="true">◉</div>
-        <h3>Know the crowd</h3>
-        <p>Review crowd categories and plan a more comfortable visit.</p>
-      </article>
-      <article class="feature-card">
-        <div class="feature-icon icon-blue" aria-hidden="true">⌁</div>
-        <h3>Digital pass</h3>
-        <p>Keep your booking details together in one easy-to-read pass.</p>
-      </article>
-      <article class="feature-card">
-        <div class="feature-icon icon-purple" aria-hidden="true">♡</div>
-        <h3>Helpful services</h3>
-        <p>Find parking, donation and Lost &amp; Found services in one place.</p>
-      </article>
-    </div>
-  </section>
-  <footer class="site-footer" id="footer">Smart Temple · Efficient Devotee Flow Management · Frontend prototype</footer>
-</main>
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script>
-const nav = document.getElementById("mainNav");
-const menuToggle = document.getElementById("menuToggle");
-const toast = document.getElementById("toast");
-let toastTimer;
+      <div class="feature-grid">
+        <article class="feature-card">
+          <div class="feature-icon icon-orange" aria-hidden="true">▣</div>
+          <h3>Book ahead</h3>
+          <p>Choose a temple, date and time slot before you arrive.</p>
+        </article>
 
-menuToggle.addEventListener("click", () => {
-  const isOpen = nav.classList.toggle("open");
-  menuToggle.setAttribute("aria-expanded", String(isOpen));
-  menuToggle.textContent = isOpen ? "×" : "☰";
-});
+        <article class="feature-card">
+          <div class="feature-icon icon-green" aria-hidden="true">◉</div>
+          <h3>Know the crowd</h3>
+          <p>Review crowd categories and plan a more comfortable visit.</p>
+        </article>
 
-document.querySelectorAll(".nav-link").forEach(link => {
-  link.addEventListener("click", () => {
-    document.querySelectorAll(".nav-link").forEach(item => item.classList.remove("active"));
-    link.classList.add("active");
-    nav.classList.remove("open");
-    menuToggle.setAttribute("aria-expanded", "false");
-    menuToggle.textContent = "☰";
-    const target = link.dataset.nav;
-    if (target === "booking") showToast("Darshan booking screen will be added next.");
-  });
-});
+        <article class="feature-card">
+          <div class="feature-icon icon-blue" aria-hidden="true">⌁</div>
+          <h3>Digital pass</h3>
+          <p>Keep your booking details together in one easy-to-read pass.</p>
+        </article>
 
-document.querySelectorAll('[href="#booking"]').forEach(link => {
-  link.addEventListener("click", () => showToast("Darshan booking screen will be added next."));
-});
+        <article class="feature-card">
+          <div class="feature-icon icon-purple" aria-hidden="true">♡</div>
+          <h3>Helpful services</h3>
+          <p>Find parking, donation and Lost &amp; Found services in one place.</p>
+        </article>
+      </div>
+    </section>
 
-function showToast(message) {
-  toast.textContent = message;
-  toast.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
-}
+    <footer class="site-footer" id="footer">
+      Smart Temple · Efficient Devotee Flow Management
+    </footer>
+  </main>
 
-document.querySelectorAll("[data-lang]").forEach(button => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll("[data-lang]").forEach(item => item.classList.toggle("active", item === button));
-    const isHindi = button.dataset.lang === "hi";
-    document.getElementById("heroTitle").innerHTML = isHindi
-      ? 'स्मार्ट मंदिर में<br><span>आपका स्वागत है</span>'
-      : 'Welcome to<br><span>Smart Temple</span>';
-    document.getElementById("heroDescription").innerHTML = isHindi
-      ? 'दर्शन अनुभव को बेहतर बनाने का एक अभिनव समाधान<br class="desktop-break"><strong>कुशल भक्त प्रवाह प्रबंधन</strong>'
-      : 'We are introducing the innovative solution to<br class="desktop-break"><strong>Efficient Devotee Flow Management</strong>';
-    document.getElementById("bookButton").querySelectorAll("span")[1].textContent = isHindi ? "दर्शन बुक करें" : "Book Darshan";
-    document.getElementById("crowdButton").querySelectorAll("span")[1].textContent = isHindi ? "लाइव भीड़ स्थिति" : "Live Crowd Status";
-    showToast(isHindi ? "हिन्दी पूर्वावलोकन सक्रिय" : "English preview active");
-  });
-});
-</script>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    "use strict";
+
+    const nav = document.getElementById("mainNav");
+    const menuToggle = document.getElementById("menuToggle");
+    const loginLink = document.getElementById("loginLink");
+
+    function closeMenu() {
+      nav.classList.remove("open");
+      menuToggle.setAttribute("aria-expanded", "false");
+      menuToggle.setAttribute("aria-label", "Open navigation");
+      menuToggle.textContent = "☰";
+    }
+
+    menuToggle.addEventListener("click", () => {
+      const isOpen = nav.classList.toggle("open");
+      menuToggle.setAttribute("aria-expanded", String(isOpen));
+      menuToggle.setAttribute(
+        "aria-label",
+        isOpen ? "Close navigation" : "Open navigation"
+      );
+      menuToggle.textContent = isOpen ? "×" : "☰";
+    });
+
+    // Only mark Home as active on this landing page.
+    // Booking and Crowd Status are separate pages.
+    nav.querySelectorAll(".nav-link").forEach(link => {
+      link.addEventListener("click", () => {
+        closeMenu();
+      });
+    });
+
+    // Live Crowd Status performs its own Supabase login check.
+    // This link simply opens the page; the page enforces restriction.
+    document.getElementById("crowdButton").addEventListener("click", () => {
+      closeMenu();
+    });
+
+    // Keep the existing login page as the login destination.
+    loginLink.href = "login.html";
+
+    // Language preview.
+    document.querySelectorAll("[data-lang]").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-lang]").forEach(item => {
+          item.classList.toggle("active", item === button);
+        });
+
+        const isHindi = button.dataset.lang === "hi";
+
+        document.getElementById("heroTitle").innerHTML = isHindi
+          ? 'स्मार्ट मंदिर में<br><span>आपका स्वागत है</span>'
+          : 'Welcome to<br><span>Smart Temple</span>';
+
+        document.getElementById("heroDescription").innerHTML = isHindi
+          ? 'दर्शन अनुभव को बेहतर बनाने का एक अभिनव समाधान<br class="desktop-break"><strong>कुशल भक्त प्रवाह प्रबंधन</strong>'
+          : 'We are introducing the innovative solution to<br class="desktop-break"><strong>Efficient Devotee Flow Management</strong>';
+
+        document.getElementById("bookButton").querySelectorAll("span")[1].textContent =
+          isHindi ? "दर्शन बुक करें" : "Book Darshan";
+
+        document.getElementById("crowdButton").querySelectorAll("span")[1].textContent =
+          isHindi ? "लाइव भीड़ स्थिति" : "Live Crowd Status";
+      });
+    });
+
+    // If the page returns from another page, keep the mobile menu closed.
+    window.addEventListener("pageshow", closeMenu);
+  </script>
 </body>
 </html>
