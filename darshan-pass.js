@@ -208,6 +208,7 @@ async function printCompletePass() {
   window.print();
 }
 
+
 async function loadPass() {
   if (!token || token.length > 200) {
     showError("This link does not contain a valid booking token.");
@@ -227,19 +228,49 @@ async function loadPass() {
 
     $("statusPill").textContent = "VERIFYING BOOKING";
 
-    const { data, error } = await supabaseClient.rpc(
-      "get_public_darshan_pass",
-      { p_token: token }
-    );
+    let booking = null;
 
-    if (error) {
-      console.error("Pass lookup error:", error);
-      throw new Error(
-        "The booking could not be retrieved. Check the Supabase function and its permissions."
+    if (token.toUpperCase().startsWith("WLK-")) {
+      // Walk-in passes are stored in darshan_queue.
+      const { data, error } = await supabaseClient
+        .from("darshan_queue")
+        .select(
+          "booking_token, temple_name, darshan_date, devotee_count, status, created_at, source"
+        )
+        .eq("booking_token", token)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Walk-in pass lookup error:", error);
+        throw new Error(
+          "Unable to retrieve the walk-in pass. The Supabase permissions or database access policy may need updating."
+        );
+      }
+
+      booking = data;
+
+      if (booking) {
+        // Adapt the queue record to the existing pass layout.
+        booking.devotee_name = "Walk-in Devotee";
+        booking.temple_city = "";
+        booking.time_slot = "";
+      }
+    } else {
+      // Keep the existing online booking lookup unchanged.
+      const { data, error } = await supabaseClient.rpc(
+        "get_public_darshan_pass",
+        { p_token: token }
       );
-    }
 
-    const booking = getBookingFromResponse(data);
+      if (error) {
+        console.error("Online pass lookup error:", error);
+        throw new Error(
+          "The online booking could not be retrieved. Check the Supabase function and its permissions."
+        );
+      }
+
+      booking = getBookingFromResponse(data);
+    }
 
     if (!booking) {
       showError(
@@ -252,8 +283,6 @@ async function loadPass() {
 
     if (params.get("autoprint") === "1" && !printStarted) {
       printStarted = true;
-
-      // Wait for content and QR rendering before opening print preview.
       await waitForQrRender();
       setTimeout(() => window.print(), 300);
     }
@@ -261,11 +290,11 @@ async function loadPass() {
     console.error("Could not load E-Darshan pass:", error);
 
     showError(
-      error.message ||
-      "Unable to load this pass. Please try again."
+      error.message || "Unable to load this pass. Please try again."
     );
   }
 }
+
 
 $("printPass").addEventListener("click", () => {
   printCompletePass().catch((error) => {

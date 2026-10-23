@@ -1,0 +1,1470 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Temple | Temple Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+:root {
+  color-scheme: light;
+  --navy: #14263d;
+  --navy2: #203b5b;
+  --bg: #f3f6fa;
+  --panel: #ffffff;
+  --panel2: #edf3fa;
+  --line: #dce5ef;
+  --text: #172b45;
+  --muted: #607086;
+  --gold: #d7a84b;
+  --green: #21845b;
+  --blue: #315d91;
+  --red: #c83f56;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 Inter, Segoe UI, Arial, sans-serif;
+}
+
+button, input, select { font: inherit; }
+
+button {
+  cursor: pointer;
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 15px;
+  font-weight: 700;
+}
+
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 17px 4%;
+  border-bottom: 1px solid #243b57;
+  background: var(--navy);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.brand {
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+}
+
+.brand span {
+  color: var(--gold);
+  margin-right: 8px;
+}
+
+.brand small { color: #dce6f2; }
+
+.topright {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #e0e8f2;
+  font-size: 13px;
+}
+
+.logout {
+  background: #ffffff;
+  color: var(--navy);
+}
+
+main {
+  max-width: 1400px;
+  margin: auto;
+  padding: 26px 4% 50px;
+}
+
+.welcome {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+h1 {
+  font-size: clamp(25px, 4vw, 35px);
+  margin: 0 0 5px;
+}
+
+h2 {
+  font-size: 20px;
+  margin: 0 0 12px;
+}
+
+h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+p {
+  margin: 5px 0;
+  color: var(--muted);
+}
+
+.muted, small { color: var(--muted); }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 99px;
+  background: #e1f5eb;
+  color: #176b48;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.metric, .panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 19px;
+  box-shadow: 0 5px 18px rgba(20, 38, 61, .045);
+}
+
+.metric {
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(20, 38, 61, .09);
+}
+
+.metric-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.metric-number {
+  font-size: 34px;
+  font-weight: 850;
+  margin: 7px 0 0;
+}
+
+.gold { color: var(--gold); }
+.blue { color: var(--blue); }
+.green { color: var(--green); }
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, .85fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.panel { margin-bottom: 16px; }
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+input, select {
+  width: 100%;
+  min-height: 43px;
+  border: 1px solid #cbd7e5;
+  border-radius: 9px;
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--text);
+}
+
+input:focus, select:focus {
+  outline: 2px solid #b8cce4;
+  border-color: var(--blue);
+}
+
+.primary {
+  background: var(--navy);
+  color: #fff;
+}
+
+.primary:hover { background: var(--navy2); }
+
+.green-btn {
+  background: #21845b;
+  color: white;
+}
+
+.secondary {
+  background: #e5edf6;
+  color: var(--navy);
+}
+
+.danger {
+  background: #fce8eb;
+  color: #8f2438;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.row > * { flex: 1; }
+
+.nowbox {
+  background: #f3f6fa;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 17px;
+  margin: 12px 0;
+}
+
+.nowbox .token {
+  font-size: clamp(30px, 5vw, 44px);
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: var(--navy);
+  overflow-wrap: anywhere;
+}
+
+.nextbox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.nextbox strong {
+  font-size: 24px;
+  color: var(--green);
+}
+
+.queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.queue-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+}
+
+.queue-item strong {
+  display: block;
+  font-size: 17px;
+  color: var(--navy);
+}
+
+.queue-item small { display: block; }
+
+.tag {
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 6px;
+  padding: 4px 7px;
+  background: #e5eef9;
+  color: #315d91;
+}
+
+.tag.walkin {
+  background: #e1f5eb;
+  color: #176b48;
+}
+
+.empty {
+  padding: 18px;
+  text-align: center;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+}
+
+.message {
+  min-height: 20px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+/* Navy-and-gold Walk-in E-Pass */
+.pass {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #ffffff;
+  color: #172b45;
+  border: 2px solid #d7a84b;
+  border-radius: 18px;
+  padding: 0 22px 22px;
+  text-align: center;
+  max-width: 390px;
+  margin: 16px auto;
+  box-shadow: 0 12px 30px rgba(20, 38, 61, .12);
+}
+
+.pass::before {
+  content: "";
+  display: block;
+  height: 8px;
+  margin: 0 -22px 18px;
+  background: #d7a84b;
+}
+
+.pass > div:first-child {
+  display: inline-block;
+  background: #14263d;
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  letter-spacing: 2px;
+}
+
+.pass > p:first-of-type {
+  color: #b1842f;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  margin: 14px 0 8px;
+}
+
+.pass h2 {
+  color: #14263d;
+  font-size: 21px;
+  line-height: 1.3;
+  margin: 8px 0 12px;
+}
+
+.pass p { color: #607086; }
+
+.pass .pass-token {
+  display: inline-block;
+  background: #eaf5ef;
+  border: 1px dashed #21845b;
+  border-radius: 10px;
+  padding: 8px 16px;
+  margin: 2px 0 8px;
+  font-size: 30px;
+  line-height: 1.25;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #176b48;
+  overflow-wrap: anywhere;
+}
+
+.pass #passCount {
+  font-weight: 700;
+  color: #172b45;
+  margin: 8px 0;
+}
+
+.pass .qr {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px auto 12px;
+  padding: 12px;
+  width: fit-content;
+  background: #ffffff;
+  border: 1px solid #dce5ef;
+  border-radius: 12px;
+}
+
+.pass .qr img,
+.pass .qr canvas {
+  display: block;
+  max-width: 100%;
+}
+
+.pass small {
+  display: block;
+  border-top: 1px solid #dce5ef;
+  padding-top: 12px;
+  color: #607086;
+  font-size: 11px;
+}
+
+.qr {
+  display: flex;
+  justify-content: center;
+  margin: 16px auto;
+}
+
+#scanner {
+  width: 100%;
+  max-width: 430px;
+  margin: 12px auto;
+}
+
+.notice {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.hidden { display: none !important; }
+
+.footer {
+  text-align: center;
+  color: #72819a;
+  margin-top: 20px;
+  font-size: 12px;
+}
+
+@media(max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .columns { grid-template-columns: 1fr; }
+}
+
+@media(max-width: 520px) {
+  main { padding: 18px 4%; }
+  .grid { gap: 9px; }
+  .metric, .panel { padding: 14px; }
+  .metric-number { font-size: 29px; }
+
+  .welcome {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .topbar { padding: 13px 4%; }
+  .topright { font-size: 11px; }
+  .brand { font-size: 16px; }
+}
+
+@media print {
+  @page {
+    size: A5 portrait;
+    margin: 10mm;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    color: #172b45 !important;
+    min-height: 0 !important;
+  }
+
+  body * { visibility: hidden !important; }
+
+  #printArea,
+  #printArea * { visibility: visible !important; }
+
+  #printArea {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #printArea .pass {
+    display: block !important;
+    width: 100% !important;
+    max-width: 390px !important;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    break-inside: avoid;
+  }
+
+  #printArea button { display: none !important; }
+}
+</style>
+</head>
+
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span>ॐ</span> SMART TEMPLE <small> / TEMPLE ADMIN</small>
+  </div>
+  <div class="topright">
+    <span id="adminLabel">Checking access...</span>
+    <button class="logout" id="logoutBtn">Logout</button>
+  </div>
+</header>
+
+<main>
+  <div class="welcome">
+    <div>
+      <h1 id="templeHeading">Temple Operations</h1>
+      <p>Today's bookings, darshan queue and walk-in management.</p>
+    </div>
+    <span class="pill">● QUEUE CONTROL</span>
+  </div>
+
+  <!-- FOUR MAIN DASHBOARD STATISTICS -->
+  <div class="grid">
+    <div class="metric">
+      <div class="metric-label">TOTAL REGISTERED</div>
+      <div class="metric-number blue" id="totalRegistered">—</div>
+      <small>Distinct devotees who booked at this temple</small>
+    </div>
+
+    <div class="metric">
+      <div class="metric-label">TODAY'S ONLINE BOOKINGS</div>
+      <div class="metric-number green" id="todayOnline">—</div>
+      <small>Non-cancelled bookings for today</small>
+    </div>
+
+    <div class="metric">
+      <div class="metric-label">TODAY'S WALK-INS</div>
+      <div class="metric-number gold" id="todayWalkin">—</div>
+      <small>Walk-in groups registered today</small>
+    </div>
+
+    <div class="metric">
+      <div class="metric-label">ADVANCE BOOKINGS</div>
+      <div class="metric-number blue" id="advanceBookings">—</div>
+      <small>Non-cancelled bookings for future dates</small>
+    </div>
+  </div>
+
+  <!-- Hidden counters used by existing queue calculations -->
+  <div class="grid hidden" aria-hidden="true">
+    <div id="onlineGroups">0</div>
+    <div id="walkinGroups">0</div>
+    <div id="totalPeople">0</div>
+    <div id="waitingGroups">0</div>
+    <div id="servedLabel">0 groups served</div>
+    <div id="queueCount">0 groups</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Darshan Slot</h2>
+      <button class="secondary" id="refreshBtn">↻ Refresh</button>
+    </div>
+
+    <label class="field">
+      TODAY'S SLOT
+      <select id="slotSelect">
+        <option value="">Loading today's slots...</option>
+      </select>
+    </label>
+
+    <p class="notice">
+      The queue is managed separately for each selected slot.
+      Online bookings are imported when a slot is selected.
+    </p>
+
+    <div id="topMessage" class="message" role="status"></div>
+  </div>
+
+  <div class="columns">
+    <div>
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Live Darshan Queue</h2>
+          <span class="pill">LIVE</span>
+        </div>
+
+        <div class="nowbox">
+          <small>NOW SERVING</small>
+          <div class="token" id="currentToken">—</div>
+          <p id="currentDetails">No group is being served.</p>
+        </div>
+
+        <div class="nextbox">
+          <div>
+            <small>NEXT IN LINE</small>
+            <div id="nextDetails">No waiting group</div>
+          </div>
+          <strong id="nextToken">—</strong>
+        </div>
+
+        <button class="green-btn" id="callNextBtn"
+          style="width:100%;margin-top:14px">
+          ▶ CALL NEXT DEVOTEE
+        </button>
+
+        <div id="callMessage" class="message" role="status"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Queue for Selected Slot</h2>
+          <span class="muted" id="queueCountLabel">0 groups</span>
+        </div>
+
+        <div id="queueList" class="queue-list">
+          <div class="empty">Choose a slot to load its queue.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Scan a Darshan Pass</h2>
+          <span class="tag">ONL / WLK</span>
+        </div>
+
+        <p>Scan a QR code to look up its token in this temple's selected slot.</p>
+
+        <button class="primary" id="startScanBtn">Open Camera Scanner</button>
+        <button class="secondary hidden" id="stopScanBtn">Stop Scanner</button>
+
+        <div id="scanner" class="hidden"></div>
+        <div id="scanResult" class="message" role="status"></div>
+      </section>
+    </div>
+
+    <div>
+      <section class="panel">
+        <h2>Register Walk-in Group</h2>
+        <p>One token for a family or group. Enter the total number of devotees.</p>
+
+        <form id="walkinForm">
+          <label class="field">
+            NUMBER OF DEVOTEES
+            <input id="walkinCount" type="number"
+              min="1" max="100" value="1" required>
+          </label>
+
+          <button class="primary" id="walkinBtn"
+            type="submit" style="width:100%">
+            ＋ ISSUE WALK-IN TOKEN
+          </button>
+        </form>
+
+        <div id="walkinMessage" class="message" role="status"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Walk-in E-Pass</h2>
+        <p>After issuing a token, print a pass with a scannable QR code.</p>
+
+        <div id="printArea" class="hidden">
+          <div class="pass">
+            <div style="font-size:12px;letter-spacing:2px;font-weight:800">
+              SMART TEMPLE
+            </div>
+            <p>WALK-IN DARSHAN PASS</p>
+            <h2 id="passTemple">Temple</h2>
+            <div class="pass-token" id="passToken">WLK-001</div>
+            <p id="passCount">1 devotee</p>
+            <div class="qr" id="passQR"></div>
+            <small>Keep this pass ready for scanning.</small>
+          </div>
+
+          <button class="primary" id="printBtn" style="width:100%">
+            Print Walk-in Pass
+          </button>
+        </div>
+
+        <div id="noPass" class="empty">
+          A pass will appear here after a walk-in token is issued.
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Live Crowd Detection</h2>
+          <span class="tag">YOLOv8</span>
+        </div>
+
+        <div class="metric-number" id="cameraCount">—</div>
+        <p>Detected people in the webcam frame</p>
+        <p class="notice">
+          Webcam/YOLOv8 integration is a separate next step.
+          This panel is a placeholder, not a live sensor reading.
+        </p>
+      </section>
+    </div>
+  </div>
+
+  <div class="footer">
+    Smart Temple Crowd Management System · Admin operations
+  </div>
+</main>
+
+<script>
+"use strict";
+
+const SUPABASE_URL = "https://vdcxvxtgkzwsknxmevwt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_xKYJqVUJ9CzA7TFxKKKjKQ_Nn6bdDLM";
+
+const sb = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+const $ = id => document.getElementById(id);
+
+let user = null;
+let profile = null;
+let slots = [];
+let selectedSlot = null;
+let scanner = null;
+let scannerRunning = false;
+let refreshTimer = null;
+
+function localDate() {
+  const d = new Date();
+
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function msg(id, text, bad = false) {
+  $(id).textContent = text || "";
+  $(id).style.color = bad ? "#c83f56" : "#607086";
+}
+
+function fmtTime(v) {
+  if (!v) return "";
+
+  const [h, m] = v.slice(0, 5).split(":").map(Number);
+
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
+}
+
+function fmtSlot(s) {
+  return `${fmtTime(s.slot_start)} - ${fmtTime(s.slot_end)}`;
+}
+
+/*
+  OVERVIEW STATISTICS
+
+  Total Registered:
+  Distinct devotee IDs found in this temple's bookings.
+
+  Today's Online Bookings:
+  Bookings with today's booking_date, excluding cancelled rows.
+
+  Today's Walk-ins:
+  Walk-in queue entries created today, excluding cancelled rows.
+
+  Advance Bookings:
+  Bookings with a future booking_date, excluding cancelled rows.
+*/
+async function loadOverviewStats() {
+  const today = localDate();
+
+  const tomorrowDate = new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+
+  const tomorrow =
+    `${tomorrowDate.getFullYear()}-${String(tomorrowDate.getMonth() + 1).padStart(2, "0")}-${String(tomorrowDate.getDate()).padStart(2, "0")}`;
+
+  try {
+    const { data: registeredRows, error: registeredError } = await sb
+      .from("bookings")
+      .select("devotee_id")
+      .eq("temple_id", profile.temple_id);
+
+    if (registeredError) throw registeredError;
+
+    const uniqueDevotees = new Set(
+      (registeredRows || [])
+        .map(row => row.devotee_id)
+        .filter(Boolean)
+    );
+
+    $("totalRegistered").textContent = uniqueDevotees.size;
+
+    const { data: todayRows, error: todayError } = await sb
+      .from("bookings")
+      .select("id")
+      .eq("temple_id", profile.temple_id)
+      .eq("booking_date", today)
+      .neq("status", "cancelled");
+
+    if (todayError) throw todayError;
+
+    $("todayOnline").textContent = (todayRows || []).length;
+
+    const { data: walkinRows, error: walkinError } = await sb
+      .from("darshan_queue")
+      .select("id")
+      .eq("temple_id", profile.temple_id)
+      .eq("source", "walkin")
+      .gte("created_at", `${today}T00:00:00`)
+      .lt("created_at", `${tomorrow}T00:00:00`)
+      .neq("status", "cancelled");
+
+    if (walkinError) throw walkinError;
+
+    $("todayWalkin").textContent = (walkinRows || []).length;
+
+    const { data: advanceRows, error: advanceError } = await sb
+      .from("bookings")
+      .select("id")
+      .eq("temple_id", profile.temple_id)
+      .gt("booking_date", today)
+      .neq("status", "cancelled");
+
+    if (advanceError) throw advanceError;
+
+    $("advanceBookings").textContent = (advanceRows || []).length;
+
+  } catch (error) {
+    console.error("Overview statistics error:", error);
+
+    [
+      "totalRegistered",
+      "todayOnline",
+      "todayWalkin",
+      "advanceBookings"
+    ].forEach(id => {
+      $(id).textContent = "—";
+    });
+
+    msg(
+      "topMessage",
+      "Some overview statistics could not load: " + error.message,
+      true
+    );
+  }
+}
+
+async function init() {
+  try {
+    const { data: { session }, error } = await sb.auth.getSession();
+
+    if (error) throw error;
+
+    if (!session) {
+      location.replace("./login.html");
+      return;
+    }
+
+    user = session.user;
+
+    const { data: p, error: pe } = await sb
+      .from("profiles")
+      .select("id,full_name,email,role,temple_id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (pe) throw pe;
+
+    if (!p || p.role !== "temple_admin" || !p.temple_id) {
+      document.body.innerHTML = `
+        <main>
+          <section class="panel">
+            <h1>Temple Admin access required</h1>
+            <p>
+              Your signed-in profile must have role
+              <b>temple_admin</b> and a valid temple_id.
+              Ask the Main Admin to assign your temple.
+            </p>
+            <button onclick="location.href='./login.html'">
+              Back to Login
+            </button>
+          </section>
+        </main>
+      `;
+      return;
+    }
+
+    profile = p;
+
+    $("adminLabel").textContent =
+      p.full_name || user.email || "Temple Admin";
+
+    const { data: t, error: te } = await sb
+      .from("temples")
+      .select("id,name,city")
+      .eq("id", p.temple_id)
+      .maybeSingle();
+
+    if (te) throw te;
+
+    if (!t) {
+      throw new Error("The temple assigned to this admin was not found.");
+    }
+
+    $("templeHeading").textContent = t.name;
+
+    await loadOverviewStats();
+    await loadSlots();
+
+    bindEvents();
+
+    refreshTimer = setInterval(() => {
+      loadOverviewStats();
+
+      if (selectedSlot) {
+        loadQueue();
+      }
+    }, 30000);
+
+  } catch (e) {
+    console.error(e);
+
+    msg(
+      "topMessage",
+      e.message || "Dashboard could not load.",
+      true
+    );
+  }
+}
+
+async function loadSlots() {
+  const { data, error } = await sb
+    .from("darshan_slots")
+    .select("id,temple_id,slot_date,slot_start,slot_end,capacity,is_open")
+    .eq("temple_id", profile.temple_id)
+    .eq("slot_date", localDate())
+    .order("slot_start");
+
+  if (error) throw error;
+
+  slots = data || [];
+
+  const select = $("slotSelect");
+  select.replaceChildren();
+
+  if (!slots.length) {
+    select.add(new Option("No slots configured for today", ""));
+
+    selectedSlot = null;
+
+    resetDashboard();
+
+    msg(
+      "topMessage",
+      "No darshan slots are configured for today. Add today's slots in Supabase first."
+    );
+
+    return;
+  }
+
+  slots.forEach(s => {
+    select.add(new Option(
+      `${fmtSlot(s)} · Capacity ${s.capacity}${s.is_open ? "" : " · CLOSED"}`,
+      s.id
+    ));
+  });
+
+  selectedSlot = slots.find(s => s.is_open)?.id || slots[0].id;
+
+  select.value = selectedSlot;
+
+  await selectSlot();
+}
+
+function resetDashboard() {
+  [
+    "onlineGroups",
+    "walkinGroups",
+    "totalPeople",
+    "waitingGroups",
+    "servedLabel",
+    "queueCount"
+  ].forEach(id => {
+    $(id).textContent = "0";
+  });
+
+  $("currentToken").textContent = "—";
+  $("currentDetails").textContent = "No group is being served.";
+  $("nextToken").textContent = "—";
+  $("nextDetails").textContent = "No waiting group";
+
+  $("queueCountLabel").textContent = "0 groups";
+
+  $("queueList").innerHTML =
+    '<div class="empty">No slot selected.</div>';
+}
+
+async function selectSlot() {
+  selectedSlot = $("slotSelect").value || null;
+
+  if (!selectedSlot) {
+    resetDashboard();
+    return;
+  }
+
+  const slot = slots.find(s => s.id === selectedSlot);
+
+  if (!slot) return;
+
+  if (!slot.is_open) {
+    msg(
+      "topMessage",
+      "This slot is marked closed. You can inspect its queue, but new walk-ins cannot be registered.",
+      true
+    );
+  } else {
+    msg("topMessage", "Syncing confirmed online bookings...");
+  }
+
+  const { error } = await sb.rpc(
+    "sync_online_queue",
+    { p_slot_id: selectedSlot }
+  );
+
+  if (error) {
+    console.error("Online queue sync:", error);
+
+    msg(
+      "topMessage",
+      "Online booking sync failed: " + error.message,
+      true
+    );
+  } else {
+    msg("topMessage", "Slot ready. Online bookings synced.");
+  }
+
+  await loadQueue();
+}
+
+async function loadQueue() {
+  if (!selectedSlot) return;
+
+  const { data, error } = await sb
+    .from("darshan_queue")
+    .select("id,booking_token,temple_name,darshan_date,devotee_count,source,status,created_at,booking_id,queue_position")
+    .eq("temple_id", profile.temple_id)
+    .eq("slot_id", selectedSlot)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error(error);
+
+    msg(
+      "topMessage",
+      "Queue could not load: " + error.message,
+      true
+    );
+
+    return;
+  }
+
+  const rows = data || [];
+
+  const online = rows.filter(
+    r => r.source === "online" && r.status !== "cancelled"
+  );
+
+  const walkins = rows.filter(
+    r => r.source === "walkin" && r.status !== "cancelled"
+  );
+
+  const waiting = rows.filter(r => r.status === "waiting");
+  const served = rows.filter(r => r.status === "served");
+
+  const current = rows.find(r => r.status === "serving");
+  const next = waiting[0];
+
+  $("onlineGroups").textContent = online.length;
+  $("walkinGroups").textContent = walkins.length;
+
+  $("totalPeople").textContent = rows
+    .filter(r => r.status !== "cancelled")
+    .reduce(
+      (sum, r) => sum + Number(r.devotee_count || 0),
+      0
+    );
+
+  $("waitingGroups").textContent = waiting.length;
+  $("servedLabel").textContent = `${served.length} groups served`;
+  $("queueCount").textContent = `${rows.length} groups`;
+  $("queueCountLabel").textContent = `${rows.length} groups`;
+
+  $("currentToken").textContent =
+    current?.booking_token || "—";
+
+  $("currentDetails").textContent = current
+    ? `${current.devotee_count} devotee(s) · ${current.source === "walkin" ? "Walk-in" : "Online booking"}`
+    : "No group is being served.";
+
+  $("nextToken").textContent =
+    next?.booking_token || "—";
+
+  $("nextDetails").textContent = next
+    ? `${next.devotee_count} devotee(s) · ${next.source === "walkin" ? "Walk-in" : "Online booking"}`
+    : "No waiting group";
+
+  $("callNextBtn").disabled = !next;
+
+  const list = $("queueList");
+  list.replaceChildren();
+
+  if (!rows.length) {
+    list.innerHTML =
+      '<div class="empty">No bookings or walk-ins in this slot yet.</div>';
+    return;
+  }
+
+  rows.forEach(r => {
+    const item = document.createElement("div");
+    item.className = "queue-item";
+
+    const left = document.createElement("div");
+
+    const strong = document.createElement("strong");
+    strong.textContent = r.booking_token;
+
+    const small = document.createElement("small");
+    small.textContent =
+      `${r.devotee_count} devotee(s) · ${r.status.toUpperCase()}`;
+
+    left.append(strong, small);
+
+    const tag = document.createElement("span");
+    tag.className =
+      "tag " + (r.source === "walkin" ? "walkin" : "");
+
+    tag.textContent =
+      r.source === "walkin" ? "WLK" : "ONL";
+
+    item.append(left, tag);
+    list.appendChild(item);
+  });
+}
+
+async function addWalkin(e) {
+  e.preventDefault();
+
+  if (!selectedSlot) {
+    msg("walkinMessage", "Select a slot first.", true);
+    return;
+  }
+
+  const slot = slots.find(s => s.id === selectedSlot);
+
+  if (!slot || !slot.is_open) {
+    msg("walkinMessage", "The selected slot is closed.", true);
+    return;
+  }
+
+  const count = Number($("walkinCount").value);
+
+  if (!Number.isInteger(count) || count < 1 || count > 100) {
+    msg("walkinMessage", "Enter a group size from 1 to 100.", true);
+    return;
+  }
+
+  const button = $("walkinBtn");
+  button.disabled = true;
+
+  msg("walkinMessage", "Creating walk-in token...");
+
+  try {
+    const { data, error } = await sb.rpc(
+      "add_walkin_queue",
+      {
+        p_slot_id: selectedSlot,
+        p_devotee_count: count
+      }
+    );
+
+    if (error) throw error;
+
+    msg(
+      "walkinMessage",
+      `Created ${data.booking_token} for ${count} devotee(s).`
+    );
+
+    showPass(data);
+
+    await loadQueue();
+    await loadOverviewStats();
+
+  } catch (e) {
+    console.error(e);
+
+    msg(
+      "walkinMessage",
+      e.message || "Walk-in registration failed.",
+      true
+    );
+
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function showPass(data) {
+  $("noPass").classList.add("hidden");
+  $("printArea").classList.remove("hidden");
+
+  $("passTemple").textContent =
+    data.temple_name || $("templeHeading").textContent;
+
+  $("passToken").textContent = data.booking_token;
+
+  $("passCount").textContent =
+    `${data.devotee_count} ${Number(data.devotee_count) === 1 ? "devotee" : "devotees"}`;
+
+  const qr = $("passQR");
+  qr.replaceChildren();
+
+  new QRCode(qr, {
+    text: data.booking_token,
+    width: 170,
+    height: 170,
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+async function startScanner() {
+  if (typeof Html5Qrcode === "undefined") {
+    msg(
+      "scanResult",
+      "Scanner library failed to load. Check your internet connection.",
+      true
+    );
+    return;
+  }
+
+  $("scanner").classList.remove("hidden");
+  $("startScanBtn").classList.add("hidden");
+  $("stopScanBtn").classList.remove("hidden");
+
+  scanner = new Html5Qrcode("scanner");
+
+  try {
+    await scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 230, height: 230 } },
+
+      async decodedText => {
+        await stopScanner();
+        await verifyToken(decodedText.trim());
+      },
+
+      () => {}
+    );
+
+    scannerRunning = true;
+
+    msg(
+      "scanResult",
+      "Camera active. Point it at an ONL or WLK pass."
+    );
+
+  } catch (e) {
+    console.error(e);
+
+    msg(
+      "scanResult",
+      "Could not start camera. Allow camera permission and use HTTPS or localhost.",
+      true
+    );
+
+    await stopScanner();
+  }
+}
+
+async function stopScanner() {
+  try {
+    if (scanner && scannerRunning) {
+      await scanner.stop();
+    }
+
+    if (scanner) {
+      await scanner.clear();
+    }
+
+  } catch (e) {
+    console.warn(e);
+  }
+
+  scanner = null;
+  scannerRunning = false;
+
+  $("scanner").classList.add("hidden");
+  $("startScanBtn").classList.remove("hidden");
+  $("stopScanBtn").classList.add("hidden");
+}
+
+async function verifyToken(raw) {
+  msg("scanResult", "Checking token...");
+
+  if (!selectedSlot) {
+    msg(
+      "scanResult",
+      "Select the correct slot before scanning.",
+      true
+    );
+    return;
+  }
+
+  let token = raw;
+
+  try {
+    const url = new URL(raw);
+    token = url.searchParams.get("token") || raw;
+  } catch (_) {}
+
+  if (!/^(ONL|WLK)-[0-9]+$/i.test(token)) {
+    msg(
+      "scanResult",
+      "This QR does not contain a recognised ONL/WLK token.",
+      true
+    );
+    return;
+  }
+
+  const { data, error } = await sb
+    .from("darshan_queue")
+    .select("booking_token,temple_name,devotee_count,status,source,slot_id")
+    .eq("temple_id", profile.temple_id)
+    .eq("slot_id", selectedSlot)
+    .eq("booking_token", token.toUpperCase())
+    .maybeSingle();
+
+  if (error) {
+    msg(
+      "scanResult",
+      "Token lookup failed: " + error.message,
+      true
+    );
+    return;
+  }
+
+  if (!data) {
+    msg(
+      "scanResult",
+      "Token not found for this temple and selected slot.",
+      true
+    );
+    return;
+  }
+
+  msg(
+    "scanResult",
+    `${data.booking_token} · ${data.temple_name} · ${data.devotee_count} devotee(s) · ${data.status.toUpperCase()}` +
+    (data.status === "served"
+      ? " — already served."
+      : " — verified.")
+  );
+}
+
+function bindEvents() {
+  $("slotSelect").addEventListener("change", selectSlot);
+
+  $("refreshBtn").addEventListener("click", async () => {
+    try {
+      await loadOverviewStats();
+      await loadSlots();
+
+      if (selectedSlot) {
+        await selectSlot();
+      }
+
+    } catch (e) {
+      msg("topMessage", e.message, true);
+    }
+  });
+
+  $("walkinForm").addEventListener("submit", addWalkin);
+
+  $("callNextBtn").addEventListener("click", async () => {
+    if (!selectedSlot) return;
+
+    $("callNextBtn").disabled = true;
+
+    msg("callMessage", "Advancing queue...");
+
+    try {
+      const { data, error } = await sb.rpc(
+        "call_next_queue",
+        { p_slot_id: selectedSlot }
+      );
+
+      if (error) throw error;
+
+      if (data?.booking_token) {
+        msg(
+          "callMessage",
+          `Now serving ${data.booking_token}. Previous serving token marked served.`
+        );
+      } else {
+        msg(
+          "callMessage",
+          data?.message || "No waiting groups."
+        );
+      }
+
+      await loadQueue();
+
+    } catch (e) {
+      msg(
+        "callMessage",
+        e.message || "Could not advance queue.",
+        true
+      );
+
+    } finally {
+      $("callNextBtn").disabled = false;
+    }
+  });
+
+  $("startScanBtn").addEventListener("click", startScanner);
+  $("stopScanBtn").addEventListener("click", stopScanner);
+
+  $("printBtn").addEventListener("click", () => {
+    window.print();
+  });
+
+  $("logoutBtn").addEventListener("click", async () => {
+    $("logoutBtn").disabled = true;
+
+    const { error } = await sb.auth.signOut();
+
+    if (error) {
+      $("logoutBtn").disabled = false;
+      msg("topMessage", error.message, true);
+      return;
+    }
+
+    location.replace("./login.html");
+  });
+}
+
+init();
+</script>
+</body>
+</html>

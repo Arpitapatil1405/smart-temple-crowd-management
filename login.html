@@ -21,8 +21,10 @@
 
     <section class="login-card">
       <div class="tabs">
-        <button id="loginTab" class="active" onclick="showLogin()">Login</button>
-        <button id="registerTab" onclick="showRegister()">Register</button>
+        <button id="loginTab" class="active" type="button"
+          onclick="showLogin()">Login</button>
+        <button id="registerTab" type="button"
+          onclick="showRegister()">Register</button>
       </div>
 
       <div id="loginPanel">
@@ -36,15 +38,21 @@
           </select>
 
           <label for="loginEmail">Email ID</label>
-          <input id="loginEmail" type="email" placeholder="Enter email" required>
+          <input id="loginEmail" type="email"
+            placeholder="Enter email" required>
 
           <label for="loginPassword">Password</label>
-          <input id="loginPassword" type="password" placeholder="Enter password" required>
+          <input id="loginPassword" type="password"
+            placeholder="Enter password" required>
 
           <button class="submit" type="submit">Login →</button>
           <p id="loginMessage" role="status"></p>
         </form>
-        <p>Don't have an account? <button class="text-btn" onclick="showRegister()">Register</button></p>
+
+        <p>Don't have an account?
+          <button class="text-btn" type="button"
+            onclick="showRegister()">Register</button>
+        </p>
       </div>
 
       <div id="registerPanel" hidden>
@@ -57,191 +65,296 @@
           </select>
 
           <label for="fullName">Full Name</label>
-          <input id="fullName" type="text" placeholder="Enter full name" required>
+          <input id="fullName" type="text"
+            placeholder="Enter full name" required>
 
           <div id="templeFields" hidden>
-            <label for="templeName">Temple Name</label>
-            <input id="templeName" type="text" placeholder="Enter temple name">
+            <label for="templeName">Select Temple</label>
+            <select id="templeName">
+              <option value="">Loading temples...</option>
+            </select>
 
-            <label for="templeCode">Temple Code</label>
-            <input id="templeCode" type="text" placeholder="Enter temple code">
+            <label for="templeCode">Temple Admin Code</label>
+            <input id="templeCode" type="text"
+              placeholder="Enter code provided by Main Admin"
+              autocomplete="off">
           </div>
 
           <label for="registerEmail">Email ID</label>
-          <input id="registerEmail" type="email" placeholder="Enter email" required>
+          <input id="registerEmail" type="email"
+            placeholder="Enter email" required>
 
           <label for="registerPassword">Password</label>
-          <input id="registerPassword" type="password" minlength="8" placeholder="Minimum 8 characters" required>
+          <input id="registerPassword" type="password"
+            minlength="8" placeholder="Minimum 8 characters" required>
 
           <button class="submit" type="submit">Create Account →</button>
           <p id="registerMessage" role="status"></p>
         </form>
-        <p>Already registered? <button class="text-btn" onclick="showLogin()">Login</button></p>
+
+        <p>Already registered?
+          <button class="text-btn" type="button"
+            onclick="showLogin()">Login</button>
+        </p>
       </div>
     </section>
   </main>
 
-  
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "https://vdcxvxtgkzwsknxmevwt.supabase.co";
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+   const SUPABASE_URL = "https://vdcxvxtgkzwsknxmevwt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_xKYJqVUJ9CzA7TFxKKKjKQ_Nn6bdDLM";
 
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const sb = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
 
-function showLogin() {
-  document.getElementById("loginPanel").hidden = false;
-  document.getElementById("registerPanel").hidden = true;
-  document.getElementById("loginTab").classList.add("active");
-  document.getElementById("registerTab").classList.remove("active");
-}
+    function showLogin() {
+      document.getElementById("loginPanel").hidden = false;
+      document.getElementById("registerPanel").hidden = true;
+      document.getElementById("loginTab").classList.add("active");
+      document.getElementById("registerTab").classList.remove("active");
+    }
 
-function showRegister() {
-  document.getElementById("loginPanel").hidden = true;
-  document.getElementById("registerPanel").hidden = false;
-  document.getElementById("loginTab").classList.remove("active");
-  document.getElementById("registerTab").classList.add("active");
-  updateFields();
-}
+    function showRegister() {
+      document.getElementById("loginPanel").hidden = true;
+      document.getElementById("registerPanel").hidden = false;
+      document.getElementById("loginTab").classList.remove("active");
+      document.getElementById("registerTab").classList.add("active");
+      updateFields();
+    }
 
-function updateFields() {
-  const isAdmin =
-    document.getElementById("registerRole").value === "temple-admin";
+    function updateFields() {
+      const isAdmin =
+        document.getElementById("registerRole").value === "temple-admin";
 
-  document.getElementById("templeFields").hidden = !isAdmin;
-  document.getElementById("templeName").required = isAdmin;
-  document.getElementById("templeCode").required = isAdmin;
-}
+      document.getElementById("templeFields").hidden = !isAdmin;
+      document.getElementById("templeName").required = isAdmin;
+      document.getElementById("templeCode").required = isAdmin;
+    }
 
-// Devotee registration
-document.getElementById("registerForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+    // Load temples for the Temple Admin registration dropdown.
+    async function loadTemples() {
+      const select = document.getElementById("templeName");
 
-  const msg = document.getElementById("registerMessage");
-  const role = document.getElementById("registerRole").value;
+      const { data, error } = await sb
+        .from("temples")
+        .select("id, name, city")
+        .order("name");
 
-  if (role !== "devotee") {
-    msg.textContent = "Admin registration requires authorized approval.";
-    return;
-  }
-
-  const name = document.getElementById("fullName").value.trim();
-  const email = document.getElementById("registerEmail").value.trim();
-  const password = document.getElementById("registerPassword").value;
-
-  msg.textContent = "Registering...";
-
-  try {
-    const { error } = await sb.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: name, role: "devotee" },
-        emailRedirectTo: window.location.href.split("?")[0].split("#")[0]
+      if (error) {
+        select.innerHTML =
+          '<option value="">Unable to load temples</option>';
+        console.error("Temple loading error:", error);
+        return;
       }
-    });
 
-    msg.textContent = error
-      ? error.message
-      : "Registration submitted! Check your email for the verification link.";
-  } catch (error) {
-    msg.textContent = "Connection error. Check your internet and Supabase settings.";
-    console.error(error);
-  }
-});
+      select.innerHTML =
+        '<option value="">Select your temple</option>';
 
-// Devotee login
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const msg = document.getElementById("loginMessage");
-  const role = document.getElementById("loginRole").value;
-
-  
-if (role === "main-admin") {
-  msg.textContent = "Signing in...";
-
-  try {
-    const { data, error } = await sb.auth.signInWithPassword({
-      email: document.getElementById("loginEmail").value.trim(),
-      password: document.getElementById("loginPassword").value
-    });
-
-    if (error) {
-      msg.textContent = error.message;
-      return;
+      (data || []).forEach(temple => {
+        const option = document.createElement("option");
+        option.value = temple.id;
+        option.textContent = temple.city
+          ? `${temple.name} — ${temple.city}`
+          : temple.name;
+        select.appendChild(option);
+      });
     }
 
-    const { data: profile, error: profileError } = await sb
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .maybeSingle();
+    loadTemples();
 
-    console.log("Authenticated user ID:", data.user.id);
-    console.log("Main Admin profile:", profile);
-    console.log("Profile lookup error:", profileError);
+    // Registration: Devotee and Temple Admin.
+    document.getElementById("registerForm")
+      .addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-    if (profileError) {
-      msg.textContent = "Could not verify admin role: " + profileError.message;
-      await sb.auth.signOut();
-      return;
-    }
+        const msg = document.getElementById("registerMessage");
+        const role = document.getElementById("registerRole").value;
+        const name = document.getElementById("fullName").value.trim();
+        const email = document.getElementById("registerEmail")
+          .value.trim();
+        const password =
+          document.getElementById("registerPassword").value;
 
-    const actualRole = String(profile?.role || "")
-      .trim()
-      .toLowerCase()
-      .replace(/-/g, "_");
+        const templeId =
+          document.getElementById("templeName").value;
+        const templeCode =
+          document.getElementById("templeCode").value.trim();
 
-    if (actualRole !== "main_admin") {
-      msg.textContent =
-        "This account is not authorized as Main Admin. Detected role: " +
-        (actualRole || "no profile found");
-      await sb.auth.signOut();
-      return;
-    }
+        if (role === "temple-admin" && (!templeId || !templeCode)) {
+          msg.textContent = "Select a temple and enter your admin code.";
+          return;
+        }
 
-    window.location.href = "./main-admin-dashboard.html";
-  } catch (error) {
-    console.error("Main Admin login error:", error);
-    msg.textContent = "Unable to log in: " + error.message;
-  }
+        msg.textContent = "Creating your account...";
 
-  return;
-}
+        try {
+          // Do not assign an admin role using signup metadata.
+          // The trusted database function must validate the code
+          // and create the Temple Admin profile.
+          const signupOptions = role === "devotee"
+            ? { data: { full_name: name, role: "devotee" } }
+            : { data: { full_name: name } };
 
+          const { data, error } = await sb.auth.signUp({
+            email,
+            password,
+            options: signupOptions
+          });
 
-if (role !== "devotee") {
-  msg.textContent = "Temple Admin login will be enabled later.";
-  return;
-}
+          if (error) {
+            msg.textContent = error.message;
+            return;
+          }
 
-  msg.textContent = "Signing in...";
+          if (!data.user) {
+            msg.textContent = "Account creation did not return a user.";
+            return;
+          }
 
-  try {
-    const { data, error } = await sb.auth.signInWithPassword({
-      email: document.getElementById("loginEmail").value.trim(),
-      password: document.getElementById("loginPassword").value
-    });
+          if (role === "devotee") {
+            msg.textContent = data.session
+              ? "Registration successful! You can now log in."
+              : "Account created. If email confirmation is enabled in Supabase, complete it before logging in.";
+            return;
+          }
 
-    if (error) {
-      msg.textContent = error.message;
-      return;
-    }
+          // A signed-in session is required for the secure RPC.
+          if (!data.session) {
+            msg.textContent =
+              "Account created, but no active session was returned. Check that email confirmation is disabled in Supabase. If this email was already registered, log in instead.";
+            return;
+          }
 
-    if (!data.user.email_confirmed_at) {
-      await sb.auth.signOut();
-      msg.textContent = "Please verify your email before logging in.";
-      return;
-    }
+          msg.textContent = "Verifying your Temple Admin code...";
 
-    window.location.href = "./devotee-dashboard.html";
-  } catch (error) {
-    msg.textContent = "Connection error. Please try again.";
-    console.error(error);
-  }
-});
-</script>
+          // This RPC must validate and consume the code on the server,
+          // then create the profiles row with role and temple_id.
+          const { error: redeemError } = await sb.rpc(
+            "redeem_temple_admin_code",
+            {
+              p_code: templeCode,
+              p_temple_id: templeId,
+              p_full_name: name
+            }
+          );
 
+          if (redeemError) {
+            console.error("Temple code redemption error:", redeemError);
+            msg.textContent =
+              "Account created, but Temple Admin setup failed: " +
+              redeemError.message +
+              ". Do not register again with another email. Check the database setup.";
+            return;
+          }
+
+          msg.textContent =
+            "Temple Admin registered successfully! You can now log in.";
+
+          document.getElementById("loginRole").value = "temple-admin";
+          document.getElementById("loginEmail").value = email;
+          showLogin();
+
+        } catch (error) {
+          console.error("Registration error:", error);
+          msg.textContent =
+            error.message || "Connection error. Please try again.";
+        }
+      });
+
+    // Login: Main Admin, Temple Admin and Devotee.
+    document.getElementById("loginForm")
+      .addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const msg = document.getElementById("loginMessage");
+        const role = document.getElementById("loginRole").value;
+        const email =
+          document.getElementById("loginEmail").value.trim();
+        const password =
+          document.getElementById("loginPassword").value;
+
+        msg.textContent = "Signing in...";
+
+        try {
+          const { data, error } = await sb.auth.signInWithPassword({
+            email,
+            password
+          });
+
+          if (error) {
+            msg.textContent = error.message;
+            return;
+          }
+
+          const { data: profile, error: profileError } = await sb
+            .from("profiles")
+            .select("role, temple_id")
+            .eq("id", data.user.id)
+            .maybeSingle();
+
+          if (profileError) {
+            msg.textContent =
+              "Could not verify your account role: " +
+              profileError.message;
+            await sb.auth.signOut();
+            return;
+          }
+
+          const actualRole = String(profile?.role || "")
+            .trim()
+            .toLowerCase()
+            .replace(/-/g, "_");
+
+          if (role === "main-admin") {
+            if (actualRole !== "main_admin") {
+              msg.textContent =
+                "This account is not authorized as Main Admin.";
+              await sb.auth.signOut();
+              return;
+            }
+
+            window.location.href = "./main-admin-dashboard.html";
+            return;
+          }
+
+          if (role === "temple-admin") {
+            if (actualRole !== "temple_admin" || !profile.temple_id) {
+              msg.textContent =
+                "This account is not assigned as a Temple Admin. Contact the Main Admin.";
+              await sb.auth.signOut();
+              return;
+            }
+
+            window.location.href = "./temple-admin-dashboard.html";
+            return;
+          }
+
+          if (role === "devotee") {
+            if (actualRole && actualRole !== "devotee") {
+              msg.textContent =
+                "This account belongs to a different user role. Select the correct login type.";
+              await sb.auth.signOut();
+              return;
+            }
+
+            window.location.href = "./devotee-dashboard.html";
+            return;
+          }
+
+          msg.textContent = "Please select a valid login role.";
+          await sb.auth.signOut();
+
+        } catch (error) {
+          console.error("Login error:", error);
+          msg.textContent =
+            error.message || "Connection error. Please try again.";
+        }
+      });
+
+    updateFields();
+  </script>
 </body>
 </html>
