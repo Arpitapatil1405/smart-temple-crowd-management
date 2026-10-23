@@ -1,0 +1,654 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Main Admin Dashboard | Smart Temple</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --navy:#14243a; --navy2:#203b5a; --gold:#d5a64b;
+  --bg:#f3f6fb; --white:#fff; --text:#1e293b;
+  --muted:#64748b; --border:#e2e8f0; --green:#15803d;
+  --red:#b91c1c; --shadow:0 8px 28px rgba(15,23,42,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+.layout{min-height:100vh}
+.sidebar{position:fixed;inset:0 auto 0 0;width:245px;background:var(--navy);color:white;padding:25px 16px;display:flex;flex-direction:column;z-index:5}
+.brand{font-size:19px;font-weight:800;padding:5px 10px 30px}
+.brand span{display:block;color:#e8c779;font-size:11px;letter-spacing:2px;margin-top:8px}
+.nav-label{font-size:10px;letter-spacing:2px;color:#9eafc3;padding:10px}
+.nav-btn{display:flex;align-items:center;gap:12px;width:100%;padding:13px 12px;border:0;border-radius:9px;background:transparent;color:#d7e0ed;text-align:left;margin:3px 0}
+.nav-btn:hover,.nav-btn.active{background:#29435f;color:white}
+.sidebar-bottom{margin-top:auto;color:#9eafc3;font-size:12px;padding:12px}
+.main{margin-left:245px;min-height:100vh}
+.topbar{background:white;border-bottom:1px solid var(--border);padding:19px 30px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.topbar h1{font-size:20px;margin:0}
+.topbar p{margin:5px 0 0;color:var(--muted);font-size:13px}
+.top-actions{display:flex;align-items:center;gap:12px}
+.admin-chip{background:#fef3c7;color:#854d0e;border-radius:20px;padding:9px 12px;font-size:12px;font-weight:800}
+.logout{background:white;border:1px solid var(--border);padding:9px 12px;border-radius:8px;color:var(--text)}
+.content{padding:28px;max-width:1500px;margin:auto}
+.section{display:none}
+.section.active{display:block}
+.section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:15px;flex-wrap:wrap;margin-bottom:20px}
+.section-heading h2{font-size:22px;margin:0}
+.section-heading p{color:var(--muted);margin:7px 0 0;font-size:13px}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:24px}
+.metric{background:white;border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:var(--shadow);min-width:0}
+.metric .metric-top{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:12px}
+.metric-icon{width:35px;height:35px;display:grid;place-items:center;background:#eef2ff;border-radius:10px;font-size:18px}
+.metric-value{font-size:30px;font-weight:800;margin-top:15px;overflow-wrap:anywhere}
+.metric-note{font-size:12px;color:var(--muted);margin-top:6px}
+.panel{background:white;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);margin-bottom:22px;overflow:hidden}
+.panel-head{padding:19px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.panel-head h3{margin:0;font-size:16px}
+.panel-body{padding:20px}
+.form-grid{display:grid;grid-template-columns:2fr 1fr auto;gap:14px;align-items:end}
+.field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.field label{font-size:12px;font-weight:700;color:#475569}
+.field input,.field select{width:100%;min-width:0;padding:12px;border:1px solid #cbd5e1;border-radius:8px;background:white;color:var(--text)}
+.btn{border:0;border-radius:8px;padding:12px 16px;font-weight:700}
+.btn-primary{background:var(--navy2);color:white}
+.btn-primary:hover{background:var(--navy)}
+.btn-gold{background:var(--gold);color:#2c210c}
+.btn-light{background:#f1f5f9;color:var(--text);border:1px solid var(--border)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.generated{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;margin-top:20px;padding:20px;display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.generated small{display:block;color:var(--muted);margin-bottom:7px}
+.generated-code{font-size:28px;font-weight:900;letter-spacing:1.5px;color:var(--green);overflow-wrap:anywhere}
+.generated-actions{display:flex;gap:8px;flex-wrap:wrap}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{padding:14px 17px;text-align:left;border-bottom:1px solid #edf0f5;font-size:13px}
+th{background:#f8fafc;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.7px}
+tbody tr:last-child td{border-bottom:0}
+.empty{text-align:center;color:var(--muted);padding:30px}
+.badge{display:inline-block;padding:6px 9px;border-radius:20px;font-size:11px;font-weight:800;white-space:nowrap}
+.badge.available{background:#dcfce7;color:#166534}
+.badge.used{background:#e2e8f0;color:#334155}
+.badge.warning{background:#fef3c7;color:#92400e}
+.status-line{font-size:13px;color:var(--muted);margin-top:14px;min-height:18px}
+.error{color:var(--red)!important}
+.temple-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.temple-card{background:white;border:1px solid var(--border);border-radius:12px;padding:19px}
+.temple-card h3{margin:0 0 7px;font-size:16px}
+.temple-card p{font-size:12px;color:var(--muted);margin:0 0 14px}
+.temple-card strong{font-size:23px}
+.bar{height:8px;border-radius:8px;background:#e2e8f0;margin-top:12px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--gold);width:0}
+.filter-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.filter-row select,.filter-row input{padding:10px;border:1px solid var(--border);border-radius:8px;background:white}
+.notice{background:#fffbeb;border:1px solid #fde68a;color:#854d0e;padding:13px;border-radius:9px;font-size:12px;line-height:1.6;margin-bottom:18px}
+.toast{position:fixed;right:20px;bottom:20px;background:#172b43;color:white;padding:14px 18px;border-radius:10px;box-shadow:var(--shadow);z-index:10;max-width:min(400px,90vw);font-size:13px}
+.mobile-menu{display:none}
+@media(max-width:1100px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.temple-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.form-grid{grid-template-columns:1fr 1fr}.form-grid .btn{grid-column:1/-1}}
+@media(max-width:760px){
+ .sidebar{width:245px;transform:translateX(-100%);transition:transform .2s}
+ .sidebar.open{transform:translateX(0)}
+ .main{margin-left:0}
+ .mobile-menu{display:inline-block}
+ .topbar{padding:16px;align-items:flex-start}
+ .topbar h1{font-size:17px}
+ .content{padding:16px}
+ .cards{gap:10px}
+ .metric{padding:14px}
+ .metric-value{font-size:24px}
+ .metric-top{flex-direction:column}
+ .temple-cards{grid-template-columns:1fr}
+ .form-grid{grid-template-columns:1fr}
+ .form-grid .btn{grid-column:auto}
+ .admin-chip{display:none}
+}
+@media(max-width:420px){.cards{grid-template-columns:1fr}.generated-code{font-size:23px}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">🛕 Smart Temple<span>MAIN ADMINISTRATION</span></div>
+    <div class="nav-label">WORKSPACE</div>
+    <button class="nav-btn active" data-section="overview">▦ &nbsp; Overview</button>
+    <button class="nav-btn" data-section="codes">🔑 &nbsp; Temple Code Generator</button>
+    <button class="nav-btn" data-section="temples">🏛 &nbsp; All Temples</button>
+    <button class="nav-btn" data-section="bookings">📋 &nbsp; Bookings Overview</button>
+    <div class="sidebar-bottom">Smart Temple Crowd Management<br>Authorized Main Admin</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="logout mobile-menu" id="menuButton" aria-label="Open menu">☰</button>
+        <div><h1 id="pageTitle">Main Admin Overview</h1><p id="todayLabel"></p></div>
+      </div>
+      <div class="top-actions"><span class="admin-chip">● MAIN ADMIN</span><button class="logout" id="logoutButton">Log out</button></div>
+    </header>
+
+    <main class="content">
+      <div id="pageError" class="notice" hidden></div>
+
+      <section class="section active" id="section-overview">
+        <div class="section-heading"><div><h2>Dashboard Overview</h2><p>Monitor registered temples and booking activity.</p></div><button class="btn btn-light" id="refreshButton">↻ Refresh data</button></div>
+        <div class="cards">
+          <div class="metric"><div class="metric-top"><span>Registered Temples</span><span class="metric-icon">🏛</span></div><div class="metric-value" id="totalTemples">—</div><div class="metric-note">From your temples table</div></div>
+          <div class="metric"><div class="metric-top"><span>Today's Bookings</span><span class="metric-icon">📅</span></div><div class="metric-value" id="todayBookings">—</div><div class="metric-note">Booking records dated today</div></div>
+          <div class="metric"><div class="metric-top"><span>Upcoming Bookings</span><span class="metric-icon">🗓</span></div><div class="metric-value" id="upcomingBookings">—</div><div class="metric-note">Future booking records</div></div>
+          <div class="metric"><div class="metric-top"><span>Active Queue</span><span class="metric-icon">👥</span></div><div class="metric-value" id="activeQueue">—</div><div class="metric-note">Confirmed people for today, where available</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Temple Activity</h3><button class="btn btn-light" data-go="temples">View all temples →</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Temple</th><th>Today's bookings</th><th>Upcoming</th><th>Code status</th></tr></thead><tbody id="overviewRows"><tr><td colspan="4" class="empty">Loading temple data…</td></tr></tbody></table></div>
+        </div>
+        <div class="notice">Crowd and occupancy values are shown only when supported by your database. This dashboard does not invent live sensor readings.</div>
+      </section>
+
+      <section class="section" id="section-codes">
+        <div class="section-heading"><div><h2>Temple Code Generator</h2><p>Generate a unique admin code for a registered temple.</p></div></div>
+        <div class="panel">
+          <div class="panel-head"><h3>Generate a new code</h3></div>
+          <div class="panel-body">
+            <div class="notice">Choose a temple from the database. The code is saved in Supabase and begins with the temple's initials.</div>
+            <form id="codeForm">
+              <div class="form-grid">
+                <div class="field"><label for="templeSelect">Select temple</label><select id="templeSelect" required><option value="">Loading temples…</option></select></div>
+                <div class="field"><label for="prefixInput">Code prefix</label><input id="prefixInput" maxlength="6" placeholder="e.g. SID" pattern="[A-Za-z0-9]{2,6}" required></div>
+                <button class="btn btn-primary" id="generateButton" type="submit">＋ Generate code</button>
+              </div>
+            </form>
+            <div id="generatedResult" class="generated" hidden>
+              <div><small>NEW TEMPLE ADMIN CODE</small><div class="generated-code" id="generatedCode">—</div><small>Save or share this code with the authorized temple admin.</small></div>
+              <div class="generated-actions"><button class="btn btn-light" id="copyCodeButton" type="button">Copy code</button><span class="badge available">AVAILABLE</span></div>
+            </div>
+            <p class="status-line" id="codeMessage" role="status"></p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Generated codes</h3><span class="badge available">Available</span></div>
+          <div class="table-wrap"><table><thead><tr><th>Temple</th><th>Code</th><th>Created</th><th>Status</th></tr></thead><tbody id="codeRows"><tr><td colspan="4" class="empty">Loading codes…</td></tr></tbody></table></div>
+        </div>
+      </section>
+
+      <section class="section" id="section-temples">
+        <div class="section-heading"><div><h2>All Temples</h2><p>Registered temples and their booking activity.</p></div><div class="filter-row"><input id="templeSearch" type="search" placeholder="Search temples…"></div></div>
+        <div class="temple-cards" id="templeCards"><div class="panel panel-body">Loading temples…</div></div>
+        <div class="panel" style="margin-top:22px">
+          <div class="panel-head"><h3>Temple-wise details</h3></div>
+          <div class="table-wrap"><table><thead><tr><th>Temple</th><th>Today's bookings</th><th>Upcoming bookings</th><th>Today's confirmed people</th></tr></thead><tbody id="templeRows"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody></table></div>
+        </div>
+      </section>
+
+      <section class="section" id="section-bookings">
+        <div class="section-heading"><div><h2>Bookings Overview</h2><p>Booking records visible to the current authenticated session.</p></div><div class="filter-row"><select id="bookingTempleFilter"><option value="">All temples</option></select><input id="bookingSearch" type="search" placeholder="Search booking reference…"></div></div>
+        <div class="cards">
+          <div class="metric"><div class="metric-top"><span>Total records loaded</span><span class="metric-icon">📋</span></div><div class="metric-value" id="allBookingCount">—</div></div>
+          <div class="metric"><div class="metric-top"><span>Confirmed today</span><span class="metric-icon">✓</span></div><div class="metric-value" id="confirmedTodayCount">—</div></div>
+          <div class="metric"><div class="metric-top"><span>Cancelled records</span><span class="metric-icon">↩</span></div><div class="metric-value" id="cancelledCount">—</div></div>
+          <div class="metric"><div class="metric-top"><span>Visited / completed</span><span class="metric-icon">🙏</span></div><div class="metric-value" id="visitedCount">—</div></div>
+        </div>
+        <div class="panel"><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Temple</th><th>Date</th><th>People</th><th>Status</th></tr></thead><tbody id="bookingRows"><tr><td colspan="5" class="empty">Loading bookings…</td></tr></tbody></table></div></div>
+        <p class="status-line" id="bookingMessage"></p>
+      </section>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+"use strict";
+
+const SUPABASE_URL = "https://vdcxvxtgkzwsknxmevwt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_xKYJqVUJ9CzA7TFxKKKjKQ_Nn6bdDLM";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = id => document.getElementById(id);
+let currentUser = null;
+let temples = [];
+let bookings = [];
+let codes = [];
+let toastTimer;
+
+const localDate = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+
+const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, c => ({
+  "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+}[c]));
+
+function toast(message) {
+  $("toast").textContent = message;
+  $("toast").hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("toast").hidden = true, 3500);
+}
+
+function showPageError(message) {
+  $("pageError").hidden = false;
+  $("pageError").textContent = message;
+}
+
+function getTempleId(t) {
+  return t.id ?? t.temple_id ?? "";
+}
+
+function getTempleName(t) {
+  return t.name ?? t.temple_name ?? t.title ?? t.full_name ?? "Unnamed temple";
+}
+
+function getBookingDate(b) {
+  return String(b.booking_date ?? b.darshan_date ?? b.slot_date ?? "").slice(0,10);
+}
+
+function getBookingStatus(b) {
+  return String(b.status ?? "unknown").toLowerCase();
+}
+
+function isCancelled(b) {
+  return ["cancelled","canceled"].includes(getBookingStatus(b));
+}
+
+function isVisited(b) {
+  return ["visited","admitted","completed"].includes(getBookingStatus(b));
+}
+
+function isConfirmed(b) {
+  return ["confirmed","booked","visited","admitted","completed"].includes(getBookingStatus(b));
+}
+
+function getPeople(b) {
+  return Number(b.devotee_count ?? b.people_count ?? b.number_of_people ?? 1) || 0;
+}
+
+function getBookingTempleId(b) {
+  return b.temple_id ?? "";
+}
+
+function getBookingTempleName(b) {
+  return b.temple_name ?? "";
+}
+
+function templeBookings(temple) {
+  const id = String(getTempleId(temple));
+  const name = getTempleName(temple).toLowerCase();
+  return bookings.filter(b => {
+    const bid = String(getBookingTempleId(b));
+    const bname = getBookingTempleName(b).toLowerCase();
+    return (bid && bid === id) || (!bid && bname && bname === name);
+  });
+}
+
+function dayBookings(rows, date = localDate()) {
+  return rows.filter(b => getBookingDate(b) === date && !isCancelled(b));
+}
+
+function upcomingBookings(rows) {
+  const today = localDate();
+
+  return rows.filter(b => {
+    const date = getBookingDate(b);
+    return date !== "" &&
+           date > today &&
+           !isCancelled(b);
+  });
+}
+function countPeople(rows) {
+  return rows.filter(isConfirmed).reduce((sum,b) => sum + getPeople(b), 0);
+}
+
+function makePrefix(name) {
+  const words = String(name).toUpperCase().replace(/[^A-Z0-9 ]/g," ").trim().split(/\s+/).filter(Boolean);
+  const ignored = new Set(["SHREE","SHRI","SRI","TEMPLE","MANDIR","THE"]);
+  const useful = words.filter(w => !ignored.has(w));
+  const source = useful.length ? useful : words;
+  if (!source.length) return "TEM";
+  if (source.length === 1) return source[0].slice(0,3);
+  if (source.length === 2) return source.map(w => w[0]).join("").slice(0,6);
+  return source.slice(0,3).map(w => w[0]).join("");
+}
+
+function statusBadge(status) {
+  const used = String(status).toLowerCase() === "used";
+  return `<span class="badge ${used ? "used" : "available"}">${used ? "USED" : "AVAILABLE"}</span>`;
+}
+
+function navigate(section) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.section === section));
+  $("section-" + section).classList.add("active");
+  const titles = {
+    overview:"Main Admin Overview",
+    codes:"Temple Code Generator",
+    temples:"All Temples",
+    bookings:"Bookings Overview"
+  };
+  $("pageTitle").textContent = titles[section] || "Main Admin Dashboard";
+  $("sidebar").classList.remove("open");
+}
+
+document.querySelectorAll(".nav-btn").forEach(btn => {
+  btn.addEventListener("click", () => navigate(btn.dataset.section));
+});
+
+document.querySelectorAll("[data-go]").forEach(btn => {
+  btn.addEventListener("click", () => navigate(btn.dataset.go));
+});
+
+$("menuButton").addEventListener("click", () => $("sidebar").classList.toggle("open"));
+
+$("logoutButton").addEventListener("click", async () => {
+  await sb.auth.signOut();
+  window.location.replace("./login.html");
+});
+
+$("refreshButton").addEventListener("click", () => loadDashboard(true));
+
+$("templeSelect").addEventListener("change", () => {
+  const temple = temples.find(t => String(getTempleId(t)) === $("templeSelect").value);
+  $("prefixInput").value = temple ? makePrefix(getTempleName(temple)) : "";
+});
+
+$("copyCodeButton").addEventListener("click", async () => {
+  const code = $("generatedCode").textContent;
+  try {
+    await navigator.clipboard.writeText(code);
+    toast("Temple code copied.");
+  } catch {
+    toast("Copy isn't available in this browser. Select and copy the code manually.");
+  }
+});
+
+$("templeSearch").addEventListener("input", renderTemples);
+$("bookingTempleFilter").addEventListener("change", renderBookings);
+$("bookingSearch").addEventListener("input", renderBookings);
+
+$("codeForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const message = $("codeMessage");
+  const button = $("generateButton");
+  const templeId = $("templeSelect").value;
+  const prefix = $("prefixInput").value.trim().toUpperCase();
+
+  if (!templeId || !/^[A-Z0-9]{2,6}$/.test(prefix)) {
+    message.textContent = "Choose a temple and enter a 2–6 character prefix.";
+    message.classList.add("error");
+    return;
+  }
+
+  button.disabled = true;
+  message.classList.remove("error");
+  message.textContent = "Generating code securely…";
+  $("generatedResult").hidden = true;
+
+  try {
+    const { data, error } = await sb.rpc("generate_temple_admin_code", {
+      p_temple_id: templeId,
+      p_prefix: prefix
+    });
+
+    if (error) throw error;
+
+    const result = Array.isArray(data) ? data[0] : data;
+    if (!result?.generated_code) throw new Error("The server did not return a code.");
+
+    $("generatedCode").textContent = result.generated_code;
+    $("generatedResult").hidden = false;
+    message.textContent = "Code created and saved to Supabase.";
+    await loadCodes();
+    renderOverview();
+    renderTemples();
+  } catch (error) {
+    console.error("Code generation error:", error);
+    message.textContent = error.message || "Unable to generate code.";
+    message.classList.add("error");
+  } finally {
+    button.disabled = false;
+  }
+});
+
+async function verifyMainAdmin() {
+  const { data, error } = await sb.auth.getUser();
+  if (error || !data.user) {
+    window.location.replace("./login.html");
+    return false;
+  }
+
+  const { data: profile, error: profileError } = await sb
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  if (profileError || !profile || String(profile.role).toLowerCase() !== "main_admin") {
+    await sb.auth.signOut();
+    window.location.replace("./login.html");
+    return false;
+  }
+
+  currentUser = data.user;
+  return true;
+}
+
+async function loadTemples() {
+  const { data, error } = await sb.from("temples").select("*");
+  if (error) throw new Error("Could not load temples: " + error.message);
+
+  temples = (data || []).filter(t => getTempleId(t));
+  $("totalTemples").textContent = temples.length;
+
+  const options = temples.map(t =>
+    `<option value="${escapeHtml(getTempleId(t))}">${escapeHtml(getTempleName(t))}</option>`
+  ).join("");
+
+  $("templeSelect").innerHTML = `<option value="">Choose a temple…</option>` + options;
+  $("bookingTempleFilter").innerHTML = `<option value="">All temples</option>` + options;
+  $("templeSelect").disabled = !temples.length;
+
+  $("templeSelect").addEventListener("change", () => {
+    const selected = temples.find(t => String(getTempleId(t)) === $("templeSelect").value);
+    $("prefixInput").value = selected ? makePrefix(getTempleName(selected)) : "";
+  });
+
+  if (!temples.length) {
+    $("templeSelect").innerHTML = `<option value="">No registered temples found</option>`;
+  }
+}
+
+async function loadBookings() {
+  const results = await Promise.all([
+    sb.from("bookings").select("*"),
+    sb.from("darshan_bookings").select("*")
+  ]);
+
+  const combined = [];
+  const errors = [];
+
+  results.forEach((result, index) => {
+    if (result.error) {
+      errors.push((index === 0 ? "bookings" : "darshan_bookings") + ": " + result.error.message);
+    } else {
+      (result.data || []).forEach(row => {
+        combined.push({
+          ...row,
+          __source: index === 0 ? "bookings" : "darshan_bookings"
+        });
+      });
+    }
+  });
+
+  bookings = combined;
+
+  if (errors.length) {
+    $("bookingMessage").textContent =
+      "Some booking sources could not be read: " + errors.join(" | ");
+  } else {
+    $("bookingMessage").textContent = "";
+  }
+
+  const today = bookings.filter(b => getBookingDate(b) === localDate() && !isCancelled(b));
+  $("todayBookings").textContent = today.length;
+  $("upcomingBookings").textContent = upcomingBookings(bookings).length;
+  $("activeQueue").textContent = countPeople(today);
+  $("allBookingCount").textContent = bookings.length;
+  $("confirmedTodayCount").textContent = today.filter(isConfirmed).length;
+  $("cancelledCount").textContent = bookings.filter(isCancelled).length;
+  $("visitedCount").textContent = bookings.filter(isVisited).length;
+}
+
+async function loadCodes() {
+  const { data, error } = await sb
+    .from("temple_admin_codes")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    $("codeRows").innerHTML = `<tr><td colspan="4" class="empty">Unable to load codes: ${escapeHtml(error.message)}</td></tr>`;
+    return;
+  }
+
+  codes = data || [];
+  renderCodes();
+}
+
+function getCodeTempleName(code) {
+  const temple = temples.find(t => String(getTempleId(t)) === String(code.temple_id));
+  return temple ? getTempleName(temple) : "Unknown temple";
+}
+
+function renderCodes() {
+  if (!codes.length) {
+    $("codeRows").innerHTML = `<tr><td colspan="4" class="empty">No temple codes generated yet.</td></tr>`;
+    return;
+  }
+
+  $("codeRows").innerHTML = codes.map(c => `
+    <tr>
+      <td>${escapeHtml(getCodeTempleName(c))}</td>
+      <td><strong>${escapeHtml(c.code)}</strong></td>
+      <td>${escapeHtml(c.created_at ? new Date(c.created_at).toLocaleString() : "—")}</td>
+      <td>${statusBadge(c.status)}</td>
+    </tr>
+  `).join("");
+}
+
+function renderOverview() {
+  const rows = temples.map(t => {
+    const rows = templeBookings(t);
+    const today = dayBookings(rows);
+    const future = upcomingBookings(rows);
+    const code = codes.find(c => String(c.temple_id) === String(getTempleId(t)));
+    return `<tr>
+      <td>${escapeHtml(getTempleName(t))}</td>
+      <td>${today.length}</td>
+      <td>${future.length}</td>
+      <td>${code ? statusBadge(code.status) : '<span class="badge warning">NOT GENERATED</span>'}</td>
+    </tr>`;
+  });
+
+  $("overviewRows").innerHTML = rows.length
+    ? rows.join("")
+    : `<tr><td colspan="4" class="empty">No registered temples found.</td></tr>`;
+}
+
+function renderTemples() {
+  const query = $("templeSearch").value.trim().toLowerCase();
+  const filtered = temples.filter(t => getTempleName(t).toLowerCase().includes(query));
+
+  $("templeCards").innerHTML = filtered.length ? filtered.map(t => {
+    const rows = templeBookings(t);
+    const today = dayBookings(rows);
+    const future = upcomingBookings(rows);
+    const total = rows.length;
+    const percent = total ? Math.min(100, Math.round(today.length / total * 100)) : 0;
+    return `<article class="temple-card">
+      <h3>${escapeHtml(getTempleName(t))}</h3>
+      <p>Registered temple</p>
+      <strong>${today.length}</strong><span style="font-size:12px;color:#64748b"> bookings today</span>
+      <div class="bar"><span style="width:${percent}%"></span></div>
+      <p style="margin-top:12px">Upcoming bookings: <strong>${future.length}</strong></p>
+      <p>Total visible records: ${total}</p>
+    </article>`;
+  }).join("") : `<div class="panel panel-body">No matching temples found.</div>`;
+
+  $("templeRows").innerHTML = filtered.length ? filtered.map(t => {
+    const rows = templeBookings(t);
+    const today = dayBookings(rows);
+    const future = upcomingBookings(rows);
+    return `<tr>
+      <td>${escapeHtml(getTempleName(t))}</td>
+      <td>${today.length}</td>
+      <td>${future.length}</td>
+      <td>${countPeople(today)}</td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="4" class="empty">No matching temples.</td></tr>`;
+
+  renderOverview();
+}
+
+function renderBookings() {
+  const selectedTemple = $("bookingTempleFilter").value;
+  const query = $("bookingSearch").value.trim().toLowerCase();
+
+  const filtered = bookings.filter(b => {
+    const matchesTemple = !selectedTemple ||
+      String(getBookingTempleId(b)) === selectedTemple ||
+      (!getBookingTempleId(b) && temples.some(t =>
+        String(getTempleId(t)) === selectedTemple &&
+        getTempleName(t).toLowerCase() === getBookingTempleName(b).toLowerCase()
+      ));
+    const ref = String(b.booking_ref ?? b.booking_token ?? b.id ?? "").toLowerCase();
+    return matchesTemple && ref.includes(query);
+  });
+
+  $("bookingRows").innerHTML = filtered.length ? filtered.map(b => {
+    const temple = temples.find(t => String(getTempleId(t)) === String(getBookingTempleId(b)));
+    const name = temple ? getTempleName(temple) : (getBookingTempleName(b) || "—");
+    return `<tr>
+      <td>${escapeHtml(b.booking_ref ?? b.booking_token ?? b.id ?? "—")}</td>
+      <td>${escapeHtml(name)}</td>
+      <td>${escapeHtml(getBookingDate(b) || "—")}</td>
+      <td>${getPeople(b)}</td>
+      <td>${escapeHtml(b.status ?? "unknown")}</td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="5" class="empty">No matching bookings found.</td></tr>`;
+}
+
+async function loadDashboard(showToast = false) {
+  $("todayLabel").textContent = new Date().toLocaleDateString(undefined, {
+    weekday:"long", year:"numeric", month:"long", day:"numeric"
+  });
+
+  try {
+    await loadTemples();
+  } catch (error) {
+    console.error(error);
+    showPageError(error.message);
+    $("templeSelect").innerHTML = `<option value="">Could not load temples</option>`;
+  }
+
+  await loadBookings();
+  await loadCodes();
+
+  renderOverview();
+  renderTemples();
+  renderBookings();
+
+  if (showToast) toast("Dashboard data refreshed.");
+}
+
+(async function init() {
+  try {
+    const authorized = await verifyMainAdmin();
+    if (!authorized) return;
+    await loadDashboard();
+  } catch (error) {
+    console.error(error);
+    showPageError("Dashboard initialization failed: " + error.message);
+  }
+})();
+</script>
+</body>
+</html>

@@ -157,11 +157,64 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   const msg = document.getElementById("loginMessage");
   const role = document.getElementById("loginRole").value;
 
-  if (role !== "devotee") {
-    msg.textContent =
-      "Admin login will be enabled after secure role validation.";
-    return;
+  
+if (role === "main-admin") {
+  msg.textContent = "Signing in...";
+
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({
+      email: document.getElementById("loginEmail").value.trim(),
+      password: document.getElementById("loginPassword").value
+    });
+
+    if (error) {
+      msg.textContent = error.message;
+      return;
+    }
+
+    const { data: profile, error: profileError } = await sb
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .maybeSingle();
+
+    console.log("Authenticated user ID:", data.user.id);
+    console.log("Main Admin profile:", profile);
+    console.log("Profile lookup error:", profileError);
+
+    if (profileError) {
+      msg.textContent = "Could not verify admin role: " + profileError.message;
+      await sb.auth.signOut();
+      return;
+    }
+
+    const actualRole = String(profile?.role || "")
+      .trim()
+      .toLowerCase()
+      .replace(/-/g, "_");
+
+    if (actualRole !== "main_admin") {
+      msg.textContent =
+        "This account is not authorized as Main Admin. Detected role: " +
+        (actualRole || "no profile found");
+      await sb.auth.signOut();
+      return;
+    }
+
+    window.location.href = "./main-admin-dashboard.html";
+  } catch (error) {
+    console.error("Main Admin login error:", error);
+    msg.textContent = "Unable to log in: " + error.message;
   }
+
+  return;
+}
+
+
+if (role !== "devotee") {
+  msg.textContent = "Temple Admin login will be enabled later.";
+  return;
+}
 
   msg.textContent = "Signing in...";
 

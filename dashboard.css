@@ -352,3 +352,73 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   #passCard{position:absolute;top:0;left:0;width:100%;border:2px solid #ff6500}
   #printPass,#newBooking,.close{display:none!important}
 }
+/* Today's Live Darshan Queue — Highlighted Black Card */
+#todayQueueCard {
+  background: #000000;
+  color: #ffffff;
+  border: 1px solid #333333;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* Card heading */
+#todayQueueCard .section-title {
+  color: #ffffff;
+  border-bottom: 1px solid #333333;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+
+#todayQueueCard .section-title h3,
+#todayQueueCard h2,
+#todayQueueCard p,
+#todayQueueCard small {
+  color: #ffffff;
+}
+
+/* Make the token stand out */
+#todayQueueCard #queueToken {
+  color: #FFD166;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+/* Highlight the status */
+#todayQueueCard #queueStatusBadge {
+  background: #FFD166;
+  color: #000000;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-weight: 800;
+}
+
+/* Queue information */
+#todayQueueCard #queueDevoteeCount,
+#todayQueueCard #queuePosition {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* Status message */
+#todayQueueCard #queueStatusMessage {
+  background: #171717;
+  border-left: 4px solid #FFD166;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 18px;
+  line-height: 1.6;
+}
+
+/* Mobile-friendly spacing */
+@media (max-width: 600px) {
+  #todayQueueCard {
+    padding: 16px;
+  }
+
+  #todayQueueCard #queueToken {
+    font-size: 25px;
+  }
+}
