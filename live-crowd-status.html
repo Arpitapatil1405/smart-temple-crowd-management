@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>Live Crowd Status | Smart Temple</title>
+  <link rel="stylesheet" href="live-crowd-status.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="live-crowd-status.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">✦</span><span>Smart Temple</span></a>
+    <nav><a href="index.html">Home</a><a href="devotee-dashboard.html">My Bookings</a><a class="active" href="live-crowd-status.html">Live Crowd Status</a></nav>
+    <button class="outline-button" id="signOutBtn" hidden>Sign out</button>
+  </header>
+  <main class="page-shell">
+    <section id="restrictedView" class="restricted-card" hidden>
+      <div class="shield-icon" aria-hidden="true">♢</div>
+      <h1>Restricted</h1>
+      <p>Please log in to continue.</p>
+      <button class="primary-button" id="loginButton">Log in to continue <span>→</span></button>
+    </section>
+
+    <section id="selectorView" class="selector-card" hidden>
+      <div class="shield-icon" aria-hidden="true">✓</div>
+      <h1>Select Temple to Monitor</h1>
+      <p>Choose a temple below to view its crowd status, booking counts, and slot occupancy.</p>
+      <label class="sr-only" for="templeSelect">Choose temple</label>
+      <select id="templeSelect"><option value="">Loading temples…</option></select>
+      <p class="inline-error" id="templeError" role="status"></p>
+    </section>
+
+    <section id="dashboardView" hidden>
+      <div class="dashboard-heading">
+        <div><p class="eyebrow">LIVE CROWD STATUS</p><h1 id="selectedTempleName">Temple</h1><p id="selectedTempleCity" class="muted"></p></div>
+        <div class="heading-actions"><span class="live-pill"><i></i> DATA CONNECTED</span><button class="text-button" id="changeTempleBtn">Change Temple</button></div>
+      </div>
+
+      <section class="sensor-strip" aria-label="Temple status indicators">
+        <article class="sensor-item"><span class="sensor-icon blue">♧</span><div><small>AMBIENT TEMP</small><strong id="ambientTemp">—</strong><em>Unavailable</em></div></article>
+        <article class="sensor-item"><span class="sensor-icon cyan">☁</span><div><small>INDOOR AQI</small><strong id="indoorAqi">—</strong><em>Unavailable</em></div></article>
+        <article class="sensor-item"><span class="sensor-icon purple">♙</span><div><small>CAPACITY (SELECTED DATE)</small><strong id="capacityUsed">—</strong><em id="capacityCaption">Loading from Supabase</em></div></article>
+        <article class="sensor-item"><span class="sensor-icon green">◇</span><div><small>SECURITY STATUS</small><strong id="securityStatus">—</strong><em>Unavailable</em></div></article>
+      </section>
+
+      <section class="serving-panel"><div><small>NOW SERVING</small><h2 id="nowServing">—</h2></div><div class="date-control"><label for="slotDate">Darshan date</label><input type="date" id="slotDate"></div></section>
+
+      <section class="metric-grid">
+        <article class="metric-card registered"><div class="metric-label">TOTAL REGISTERED <span>♙</span></div><strong id="totalRegistered">—</strong><p>Non-cancelled online bookings</p></article>
+        <article class="metric-card active-queue"><div class="metric-label">ACTIVE IN QUEUE <span>◷</span></div><strong id="activeQueue">—</strong><p>Online: <b id="onlineActive">—</b> · Walk-in: <b id="walkinActive">4</b></p></article>
+        <article class="metric-card upcoming"><div class="metric-label">ADVANCE BOOKINGS <span>▣</span></div><strong id="upcomingBookings">—</strong><p>Confirmed future bookings</p></article>
+        <article class="metric-card visited"><div class="metric-label">VISITED (PAST LOG) <span>✓</span></div><strong id="pastVisited">—</strong><p>Records marked visited / admitted / completed</p></article>
+      </section>
+
+      <section class="registry-panel panel">
+        <div class="panel-heading"><div><h2>♙ Live Devotee Registry &amp; Entry Audit</h2><p id="recordCount">Loading booking records…</p></div><input id="registrySearch" type="search" placeholder="⌕  Search name or token…" aria-label="Search name or token"></div>
+        <div class="tabs" role="group" aria-label="Registry filter"><button class="tab active" data-filter="all">All Records (<span id="allTabCount">0</span>)</button><button class="tab" data-filter="active">Active In-Queue (<span id="activeTabCount">0</span>)</button><button class="tab" data-filter="past">Past Visited (<span id="pastTabCount">0</span>)</button></div>
+        <div class="table-wrap"><table><thead><tr><th>TOKEN #</th><th>DEVOTEE NAME</th><th>DARSHAN DATE</th><th>SLOT TIME</th><th>CHANNEL</th><th>STATUS</th></tr></thead><tbody id="registryBody"><tr><td colspan="6" class="empty-row">Loading…</td></tr></tbody></table></div>
+      </section>
+
+      <section class="panel slot-panel"><div class="panel-heading"><div><h2>◷ Live Slot Occupancy &amp; Capacity Grid</h2><p>Occupancy and availability are calculated from Supabase bookings and slot capacities.</p></div><span class="source-pill">SUPABASE</span></div><div id="slotGrid" class="slot-grid"><p class="empty-row">Loading slots…</p></div></section>
+
+      <section class="prediction-panel"><div class="prediction-heading"><span>◷</span><div><h2>Live Queue Predictions</h2><p>Booking-based indicators; sensor-dependent predictions are unavailable until sensor data is connected.</p></div></div><div class="prediction-grid"><article><small>PEOPLE ARRIVING</small><strong id="peopleArriving">—</strong><p>Sensor data unavailable</p></article><article><small>DARSHAN RATE</small><strong id="darshanRate">—</strong><p>Sensor data unavailable</p></article><article><small>OPEN GATES</small><strong id="openGates">—</strong><p>Gate data unavailable</p></article><article class="wide"><div><small>EST. QUEUE SIZE</small><p>Confirmed online bookings for selected date plus walk-in demo estimate</p></div><strong id="estimatedQueue">—</strong></article><article class="wide"><div><small>SYSTEM LOAD</small><p>Booked places ÷ total slot capacity for selected date</p></div><strong id="systemLoad">—</strong></article><article class="wait-time"><div><small>Estimated Wait Time</small><p>Unavailable until measured darshan rate and queue sensor data are connected.</p></div><strong id="waitTime">— <small>mins</small></strong></article></div></section>
+      <p class="page-error" id="pageError" role="status"></p>
+    </section>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="restrictedDialog"><div class="dialog-icon">🔒</div><h2>Restricted</h2><p>Please log in to continue.</p><div class="dialog-actions"><button id="dismissRestriction" class="outline-button">Cancel</button><button id="dialogLoginButton" class="primary-button">Log in</button></div></dialog>
+</body>
+</html>
